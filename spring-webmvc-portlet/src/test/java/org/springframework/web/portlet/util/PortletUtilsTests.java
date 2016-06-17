@@ -21,12 +21,12 @@ import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.portlet.PortletContext;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletSession;
 
 import org.junit.Test;
+
 import org.springframework.mock.web.portlet.MockActionRequest;
 import org.springframework.mock.web.portlet.MockActionResponse;
 import org.springframework.mock.web.portlet.MockPortletContext;
@@ -435,12 +435,13 @@ public final class PortletUtilsTests {
 	public void testGetRequiredSessionAttributeWithExistingSessionAndNoAttribute() throws Exception {
 		MockPortletSession session = new MockPortletSession();
 
-		final PortletRequest request = mock(PortletRequest.class);
+		PortletRequest request = mock(PortletRequest.class);
 		given(request.getPortletSession(false)).willReturn(session);
 		try {
 			PortletUtils.getRequiredSessionAttribute(request, "foo");
 			fail("expected IllegalStateException");
-		} catch (IllegalStateException ex) { /* expected */ }
+		}
+		catch (IllegalStateException ex) { /* expected */ }
 
 	}
 

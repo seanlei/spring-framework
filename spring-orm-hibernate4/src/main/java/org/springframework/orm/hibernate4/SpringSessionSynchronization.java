@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * @author Juergen Hoeller
  * @since 3.1
  */
-class SpringSessionSynchronization implements TransactionSynchronization, Ordered {
+public class SpringSessionSynchronization implements TransactionSynchronization, Ordered {
 
 	private final SessionHolder sessionHolder;
 
@@ -44,11 +44,16 @@ class SpringSessionSynchronization implements TransactionSynchronization, Ordere
 	private boolean holderActive = true;
 
 
+	public SpringSessionSynchronization(SessionHolder sessionHolder, SessionFactory sessionFactory) {
+		this(sessionHolder, sessionFactory, false);
+	}
+
 	public SpringSessionSynchronization(SessionHolder sessionHolder, SessionFactory sessionFactory, boolean newSession) {
 		this.sessionHolder = sessionHolder;
 		this.sessionFactory = sessionFactory;
 		this.newSession = newSession;
 	}
+
 
 	private Session getCurrentSession() {
 		return this.sessionHolder.getSession();
@@ -107,18 +112,21 @@ class SpringSessionSynchronization implements TransactionSynchronization, Ordere
 
 	@Override
 	public void beforeCompletion() {
-		Session session = this.sessionHolder.getSession();
-		if (this.sessionHolder.getPreviousFlushMode() != null) {
-			// In case of pre-bound Session, restore previous flush mode.
-			session.setFlushMode(this.sessionHolder.getPreviousFlushMode());
+		try {
+			Session session = this.sessionHolder.getSession();
+			if (this.sessionHolder.getPreviousFlushMode() != null) {
+				// In case of pre-bound Session, restore previous flush mode.
+				session.setFlushMode(this.sessionHolder.getPreviousFlushMode());
+			}
+			// Eagerly disconnect the Session here, to make release mode "on_close" work nicely.
+			session.disconnect();
 		}
-		// Eagerly disconnect the Session here, to make release mode "on_close" work nicely.
-		session.disconnect();
-
-		// Unbind at this point if it's a new Session...
-		if (this.newSession) {
-			TransactionSynchronizationManager.unbindResource(this.sessionFactory);
-			this.holderActive = false;
+		finally {
+			// Unbind at this point if it's a new Session...
+			if (this.newSession) {
+				TransactionSynchronizationManager.unbindResource(this.sessionFactory);
+				this.holderActive = false;
+			}
 		}
 	}
 

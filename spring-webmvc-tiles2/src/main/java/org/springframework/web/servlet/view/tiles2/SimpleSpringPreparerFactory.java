@@ -27,15 +27,20 @@ import org.apache.tiles.preparer.ViewPreparer;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
- * Tiles2 {@link org.apache.tiles.preparer.PreparerFactory} implementation
+ * Tiles {@link org.apache.tiles.preparer.PreparerFactory} implementation
  * that expects preparer class names and builds preparer instances for those,
  * creating them through the Spring ApplicationContext in order to apply
  * Spring container callbacks and configured Spring BeanPostProcessors.
  *
+ * <p><b>NOTE: Tiles 2 support is deprecated in favor of Tiles 3 and will be removed
+ * as of Spring Framework 5.0.</b>.
+ *
  * @author Juergen Hoeller
  * @since 2.5
  * @see SpringBeanPreparerFactory
+ * @deprecated as of Spring 4.2, in favor of Tiles 3
  */
+@Deprecated
 public class SimpleSpringPreparerFactory extends AbstractSpringPreparerFactory {
 
 	/** Cache of shared ViewPreparer instances: bean name -> bean instance */

@@ -26,8 +26,6 @@ import org.eclipse.persistence.config.PersistenceUnitProperties;
 import org.eclipse.persistence.config.TargetDatabase;
 import org.eclipse.persistence.jpa.JpaEntityManager;
 
-import org.springframework.orm.jpa.JpaDialect;
-
 /**
  * {@link org.springframework.orm.jpa.JpaVendorAdapter} implementation for Eclipse
  * Persistence Services (EclipseLink). Developed and tested against EclipseLink 2.4.
@@ -78,7 +76,8 @@ public class EclipseLinkJpaVendorAdapter extends AbstractJpaVendorAdapter {
 					PersistenceUnitProperties.DDL_DATABASE_GENERATION);
 		}
 		if (isShowSql()) {
-			jpaProperties.put(PersistenceUnitProperties.LOGGING_LEVEL, Level.FINE.toString());
+			jpaProperties.put(PersistenceUnitProperties.CATEGORY_LOGGING_LEVEL_ +
+					org.eclipse.persistence.logging.SessionLog.SQL, Level.FINE.toString());
 		}
 
 		return jpaProperties;

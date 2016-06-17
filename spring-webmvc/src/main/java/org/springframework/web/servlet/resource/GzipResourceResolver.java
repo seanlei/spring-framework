@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,12 +22,10 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
-
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.Resource;
-
 
 /**
  * A {@code ResourceResolver} that delegates to the chain to locate a resource
@@ -43,13 +41,12 @@ import org.springframework.core.io.Resource;
  */
 public class GzipResourceResolver extends AbstractResourceResolver {
 
-
 	@Override
 	protected Resource resolveResourceInternal(HttpServletRequest request, String requestPath,
 			List<? extends Resource> locations, ResourceResolverChain chain) {
 
 		Resource resource = chain.resolveResource(request, requestPath, locations);
-		if ((resource == null) || !isGzipAccepted(request)) {
+		if ((resource == null) || (request != null && !isGzipAccepted(request))) {
 			return resource;
 		}
 
@@ -59,8 +56,8 @@ public class GzipResourceResolver extends AbstractResourceResolver {
 				return gzipped;
 			}
 		}
-		catch (IOException e) {
-			logger.trace("No gzipped resource for [" + resource.getFilename() + "]", e);
+		catch (IOException ex) {
+			logger.trace("No gzipped resource for [" + resource.getFilename() + "]", ex);
 		}
 
 		return resource;
@@ -68,7 +65,7 @@ public class GzipResourceResolver extends AbstractResourceResolver {
 
 	private boolean isGzipAccepted(HttpServletRequest request) {
 		String value = request.getHeader("Accept-Encoding");
-		return ((value != null) && value.toLowerCase().contains("gzip"));
+		return (value != null && value.toLowerCase().contains("gzip"));
 	}
 
 	@Override
@@ -85,12 +82,10 @@ public class GzipResourceResolver extends AbstractResourceResolver {
 
 		private final Resource gzipped;
 
-
 		public GzippedResource(Resource original) throws IOException {
 			this.original = original;
 			this.gzipped = original.createRelative(original.getFilename() + ".gz");
 		}
-
 
 		public InputStream getInputStream() throws IOException {
 			return this.gzipped.getInputStream();

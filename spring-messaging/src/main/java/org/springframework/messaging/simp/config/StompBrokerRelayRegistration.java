@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,6 +48,10 @@ public class StompBrokerRelayRegistration extends AbstractBrokerRegistration {
 	private String virtualHost;
 
 	private boolean autoStartup = true;
+
+	private String userDestinationBroadcast;
+
+	private String userRegistryBroadcast;
 
 
 	public StompBrokerRelayRegistration(SubscribableChannel clientInboundChannel,
@@ -166,10 +170,48 @@ public class StompBrokerRelayRegistration extends AbstractBrokerRegistration {
 		return this;
 	}
 
+	/**
+	 * Set a destination to broadcast messages to user destinations that remain
+	 * unresolved because the user appears not to be connected. In a
+	 * multi-application server scenario this gives other application servers
+	 * a chance to try.
+	 * <p>By default this is not set.
+	 * @param destination the destination to broadcast unresolved messages to,
+	 * e.g. "/topic/unresolved-user-destination"
+	 */
+	public StompBrokerRelayRegistration setUserDestinationBroadcast(String destination) {
+		this.userDestinationBroadcast = destination;
+		return this;
+	}
+
+	protected String getUserDestinationBroadcast() {
+		return this.userDestinationBroadcast;
+	}
+
+	/**
+	 * Set a destination to broadcast the content of the local user registry to
+	 * and to listen for such broadcasts from other servers. In a multi-application
+	 * server scenarios this allows each server's user registry to be aware of
+	 * users connected to other servers.
+	 * <p>By default this is not set.
+	 * @param destination the destination for broadcasting user registry details,
+	 * e.g. "/topic/simp-user-registry".
+	 */
+	public StompBrokerRelayRegistration setUserRegistryBroadcast(String destination) {
+		this.userRegistryBroadcast = destination;
+		return this;
+	}
+
+	protected String getUserRegistryBroadcast() {
+		return this.userRegistryBroadcast;
+	}
+
 
 	protected StompBrokerRelayMessageHandler getMessageHandler(SubscribableChannel brokerChannel) {
-		StompBrokerRelayMessageHandler handler = new StompBrokerRelayMessageHandler(getClientInboundChannel(),
-				getClientOutboundChannel(), brokerChannel, getDestinationPrefixes());
+
+		StompBrokerRelayMessageHandler handler = new StompBrokerRelayMessageHandler(
+				getClientInboundChannel(), getClientOutboundChannel(),
+				brokerChannel, getDestinationPrefixes());
 
 		handler.setRelayHost(this.relayHost);
 		handler.setRelayPort(this.relayPort);

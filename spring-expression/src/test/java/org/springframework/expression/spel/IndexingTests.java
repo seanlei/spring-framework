@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package org.springframework.expression.spel;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -30,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
+
 import org.springframework.expression.AccessException;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.EvaluationException;
@@ -39,6 +37,9 @@ import org.springframework.expression.TypedValue;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
+import static org.junit.Assert.*;
+
+@SuppressWarnings("rawtypes")
 public class IndexingTests {
 
 	@Test
@@ -190,8 +191,9 @@ public class IndexingTests {
 		expression = parser.parseExpression("property[0]");
 		try {
 			expression.setValue(this, "4");
-		} catch (EvaluationException e) {
-			assertTrue(e.getMessage().startsWith("EL1053E"));
+		}
+		catch (EvaluationException ex) {
+			assertTrue(ex.getMessage().startsWith("EL1053E"));
 		}
 	}
 
@@ -250,8 +252,9 @@ public class IndexingTests {
 		expression = parser.parseExpression("property[0]");
 		try {
 			assertEquals("bar", expression.getValue(this));
-		} catch (EvaluationException e) {
-			assertTrue(e.getMessage().startsWith("EL1027E"));
+		}
+		catch (EvaluationException ex) {
+			assertTrue(ex.getMessage().startsWith("EL1027E"));
 		}
 	}
 
@@ -267,8 +270,9 @@ public class IndexingTests {
 		expression = parser.parseExpression("property[0]");
 		try {
 			assertEquals("bar", expression.getValue(this));
-		} catch (EvaluationException e) {
-			assertTrue(e.getMessage().startsWith("EL1053E"));
+		}
+		catch (EvaluationException ex) {
+			assertTrue(ex.getMessage().startsWith("EL1053E"));
 		}
 	}
 
@@ -284,8 +288,9 @@ public class IndexingTests {
 		expression = parser.parseExpression("property2[0]");
 		try {
 			assertEquals("bar", expression.getValue(this));
-		} catch (EvaluationException e) {
-			assertTrue(e.getMessage().startsWith("EL1053E"));
+		}
+		catch (EvaluationException ex) {
+			assertTrue(ex.getMessage().startsWith("EL1053E"));
 		}
 	}
 

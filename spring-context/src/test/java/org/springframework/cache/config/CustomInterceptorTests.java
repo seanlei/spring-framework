@@ -16,8 +16,7 @@
 
 package org.springframework.cache.config;
 
-import static org.junit.Assert.*;
-
+import java.io.IOException;
 import java.util.Map;
 
 import org.junit.After;
@@ -34,6 +33,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -78,7 +79,7 @@ public class CustomInterceptorTests {
 		}
 		catch (RuntimeException e) {
 			assertNotNull("missing original exception", e.getCause());
-			assertEquals(Exception.class, e.getCause().getClass());
+			assertEquals(IOException.class, e.getCause().getClass());
 		}
 		catch (Exception e) {
 			fail("Wrong exception type " + e);

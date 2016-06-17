@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -105,22 +105,34 @@ public abstract class AbstractStandardUpgradeStrategy implements RequestUpgradeS
 			WebSocketHandler wsHandler, Map<String, Object> attrs) throws HandshakeFailureException {
 
 		HttpHeaders headers = request.getHeaders();
-		InetSocketAddress localAddr = request.getLocalAddress();
-		InetSocketAddress remoteAddr = request.getRemoteAddress();
+		InetSocketAddress localAddr = null;
+		try {
+			localAddr = request.getLocalAddress();
+		}
+		catch (Exception ex) {
+			// Ignore
+		}
+		InetSocketAddress remoteAddr = null;
+		try {
+			remoteAddr = request.getRemoteAddress();
+		}
+		catch (Exception ex) {
+			// Ignore
+		}
 
 		StandardWebSocketSession session = new StandardWebSocketSession(headers, attrs, localAddr, remoteAddr, user);
 		StandardWebSocketHandlerAdapter endpoint = new StandardWebSocketHandlerAdapter(wsHandler, session);
 
 		List<Extension> extensions = new ArrayList<Extension>();
-		for (WebSocketExtension e : selectedExtensions) {
-			extensions.add(new WebSocketToStandardExtensionAdapter(e));
+		for (WebSocketExtension extension : selectedExtensions) {
+			extensions.add(new WebSocketToStandardExtensionAdapter(extension));
 		}
 
 		upgradeInternal(request, response, selectedProtocol, extensions, endpoint);
 	}
 
 	protected abstract void upgradeInternal(ServerHttpRequest request, ServerHttpResponse response,
-			String selectedProtocol, List<Extension> selectedExtensions,
-			Endpoint endpoint) throws HandshakeFailureException;
+			String selectedProtocol, List<Extension> selectedExtensions, Endpoint endpoint)
+			throws HandshakeFailureException;
 
 }

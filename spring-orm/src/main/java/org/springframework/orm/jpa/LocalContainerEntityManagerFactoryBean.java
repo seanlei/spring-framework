@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ import org.springframework.util.ClassUtils;
  * up a shared JPA EntityManagerFactory in a Spring application context;
  * the EntityManagerFactory can then be passed to JPA-based DAOs via
  * dependency injection. Note that switching to a JNDI lookup or to a
- * {@link LocalEntityManagerFactoryBean}
- * definition is just a matter of configuration!
+ * {@link LocalEntityManagerFactoryBean} definition is just a matter of
+ * configuration!
  *
  * <p>As with {@link LocalEntityManagerFactoryBean}, configuration settings
  * are usually read in from a {@code META-INF/persistence.xml} config file,
@@ -68,7 +68,9 @@ import org.springframework.util.ClassUtils;
  * metadata as assembled by this FactoryBean.
  *
  * <p><b>NOTE: Spring's JPA support requires JPA 2.0 or higher, as of Spring 4.0.</b>
- * Spring's persistence unit bootstrapping automatically detects JPA 2.1 at runtime.
+ * JPA 1.0 based applications are still supported; however, a JPA 2.0/2.1 compliant
+ * persistence provider is needed at runtime. Spring's persistence unit bootstrapping
+ * automatically detects JPA 2.0 vs 2.1 through checking the JPA API on the classpath.
  *
  * @author Juergen Hoeller
  * @author Rod Johnson
@@ -171,7 +173,7 @@ public class LocalContainerEntityManagerFactoryBean extends AbstractEntityManage
 	}
 
 	/**
-	 * Specify one or more mapping resources (equivalent to {@code &lt;mapping-file&gt;}
+	 * Specify one or more mapping resources (equivalent to {@code <mapping-file>}
 	 * entries in {@code persistence.xml}) for the default persistence unit.
 	 * Can be used on its own or in combination with entity scanning in the classpath,
 	 * in both cases avoiding {@code persistence.xml}.
@@ -327,21 +329,16 @@ public class LocalContainerEntityManagerFactoryBean extends AbstractEntityManage
 			Class<?> providerClass = ClassUtils.resolveClassName(providerClassName, getBeanClassLoader());
 			provider = (PersistenceProvider) BeanUtils.instantiateClass(providerClass);
 		}
-		if (provider == null) {
-			throw new IllegalStateException("Unable to determine persistence provider. " +
-					"Please check configuration of " + getClass().getName() + "; " +
-					"ideally specify the appropriate JpaVendorAdapter class for this provider.");
-		}
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Building JPA container EntityManagerFactory for persistence unit '" +
 					this.persistenceUnitInfo.getPersistenceUnitName() + "'");
 		}
-		this.nativeEntityManagerFactory =
+		EntityManagerFactory emf =
 				provider.createContainerEntityManagerFactory(this.persistenceUnitInfo, getJpaPropertyMap());
-		postProcessEntityManagerFactory(this.nativeEntityManagerFactory, this.persistenceUnitInfo);
+		postProcessEntityManagerFactory(emf, this.persistenceUnitInfo);
 
-		return this.nativeEntityManagerFactory;
+		return emf;
 	}
 
 

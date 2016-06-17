@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,7 +169,8 @@ public class BeanDefinitionBuilder {
 	/**
 	 * Add an indexed constructor arg value. The current index is tracked internally
 	 * and all additions are at the present point.
-	 * @deprecated since Spring 2.5, in favor of {@link #addConstructorArgValue}
+	 * @deprecated since Spring 2.5, in favor of {@link #addConstructorArgValue}.
+	 * This variant just remains around for Spring Security 2.x compatibility.
 	 */
 	@Deprecated
 	public BeanDefinitionBuilder addConstructorArg(Object value) {
@@ -279,7 +280,7 @@ public class BeanDefinitionBuilder {
 	 */
 	public BeanDefinitionBuilder addDependsOn(String beanName) {
 		if (this.beanDefinition.getDependsOn() == null) {
-			this.beanDefinition.setDependsOn(new String[] {beanName});
+			this.beanDefinition.setDependsOn(beanName);
 		}
 		else {
 			String[] added = ObjectUtils.addObjectToArray(this.beanDefinition.getDependsOn(), beanName);

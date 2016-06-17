@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.reflect.TypeToken;
 import org.junit.Test;
+
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.MockHttpInputMessage;
 import org.springframework.http.MockHttpOutputMessage;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-
-import com.google.gson.reflect.TypeToken;
 
 import static org.junit.Assert.*;
 
@@ -209,16 +209,16 @@ public class GsonHttpMessageConverterTests {
 	public void prefixJson() throws Exception {
 		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
 		this.converter.setPrefixJson(true);
-		this.converter.writeInternal("foo", outputMessage);
-		assertEquals("{} && \"foo\"", outputMessage.getBodyAsString(UTF8));
+		this.converter.writeInternal("foo", null, outputMessage);
+		assertEquals(")]}', \"foo\"", outputMessage.getBodyAsString(UTF8));
 	}
 
 	@Test
 	public void prefixJsonCustom() throws Exception {
 		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
-		this.converter.setJsonPrefix(")]}',");
-		this.converter.writeInternal("foo", outputMessage);
-		assertEquals(")]}',\"foo\"", outputMessage.getBodyAsString(UTF8));
+		this.converter.setJsonPrefix(")))");
+		this.converter.writeInternal("foo", null, outputMessage);
+		assertEquals(")))\"foo\"", outputMessage.getBodyAsString(UTF8));
 	}
 
 

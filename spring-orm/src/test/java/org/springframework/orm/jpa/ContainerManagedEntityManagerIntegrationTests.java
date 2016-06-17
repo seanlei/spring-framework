@@ -18,7 +18,6 @@ package org.springframework.orm.jpa;
 
 import java.lang.reflect.Proxy;
 import java.util.List;
-
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
@@ -61,6 +60,7 @@ public class ContainerManagedEntityManagerIntegrationTests extends AbstractEntit
 		assertSame(in2, dex.getCause());
 	}
 
+	@SuppressWarnings("unchecked")
 	public void testEntityManagerProxyIsProxy() {
 		EntityManager em = createContainerManagedEntityManager();
 		assertTrue(Proxy.isProxyClass(em.getClass()));
@@ -115,8 +115,7 @@ public class ContainerManagedEntityManagerIntegrationTests extends AbstractEntit
 	}
 
 	public void doInstantiateAndSave(EntityManager em) {
-		assertEquals("Should be no people from previous transactions",
-				0, countRowsInTable(em, "person"));
+		assertEquals("Should be no people from previous transactions", 0, countRowsInTable(em, "person"));
 		Person p = new Person();
 
 		p.setFirstName("Tony");
@@ -142,19 +141,17 @@ public class ContainerManagedEntityManagerIntegrationTests extends AbstractEntit
 		doInstantiateAndSave(em);
 		setComplete();
 		endTransaction();	// Should rollback
-		assertEquals("Tx must have committed back",
-				1, countRowsInTable(em, "person"));
+		assertEquals("Tx must have committed back", 1, countRowsInTable(em, "person"));
 
 		// Now clean up the database
-		deleteFromTables(new String[] { "person" });
+		deleteFromTables("person");
 	}
 
 	public void testRollbackOccurs() {
 		EntityManager em = createContainerManagedEntityManager();
 		doInstantiateAndSave(em);
 		endTransaction();	// Should rollback
-		assertEquals("Tx must have been rolled back",
-				0, countRowsInTable(em, "person"));
+		assertEquals("Tx must have been rolled back", 0, countRowsInTable(em, "person"));
 	}
 
 	public void testCommitOccurs() {
@@ -162,11 +159,10 @@ public class ContainerManagedEntityManagerIntegrationTests extends AbstractEntit
 		doInstantiateAndSave(em);
 		setComplete();
 		endTransaction();	// Should rollback
-		assertEquals("Tx must have committed back",
-				1, countRowsInTable(em, "person"));
+		assertEquals("Tx must have committed back", 1, countRowsInTable(em, "person"));
 
 		// Now clean up the database
-		deleteFromTables(new String[] { "person" });
+		deleteFromTables("person");
 	}
 
 }

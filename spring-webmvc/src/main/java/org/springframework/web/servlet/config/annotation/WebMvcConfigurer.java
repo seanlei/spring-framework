@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,13 +53,25 @@ public interface WebMvcConfigurer {
 	void addFormatters(FormatterRegistry registry);
 
 	/**
-	 * Configure the {@link HttpMessageConverter}s to use in argument resolvers
-	 * and return value handlers that support reading and/or writing to the
-	 * body of the request and response. If no message converters are added to
-	 * the list, default converters are added instead.
+	 * Configure the {@link HttpMessageConverter}s to use for reading or writing
+	 * to the body of the request or response. If no converters are added, a
+	 * default list of converters is registered.
+	 * <p><strong>Note</strong> that adding converters to the list, turns off
+	 * default converter registration. To simply add a converter without impacting
+	 * default registration, consider using the method
+	 * {@link #extendMessageConverters(java.util.List)} instead.
 	 * @param converters initially an empty list of converters
 	 */
 	void configureMessageConverters(List<HttpMessageConverter<?>> converters);
+
+	/**
+	 * A hook for extending or modifying the list of converters after it has been
+	 * configured. This may be useful for example to allow default converters to
+	 * be registered and then insert a custom converter through this method.
+	 * @param converters the list of configured converters to extend.
+	 * @since 4.1.3
+	 */
+	void extendMessageConverters(List<HttpMessageConverter<?>> converters);
 
 	/**
 	 * Provide a custom {@link Validator} instead of the one created by default.
@@ -84,9 +96,9 @@ public interface WebMvcConfigurer {
 	 * suffix registration, path matcher and path helper.
 	 * Configured path matcher and path helper instances are shared for:
 	 * <ul>
-	 *     <li>RequestMappings</li>
-	 *     <li>ViewControllerMappings</li>
-	 *     <li>ResourcesMappings</li>
+	 * <li>RequestMappings</li>
+	 * <li>ViewControllerMappings</li>
+	 * <li>ResourcesMappings</li>
 	 * </ul>
 	 * @since 4.0.3
 	 */
@@ -119,9 +131,26 @@ public interface WebMvcConfigurer {
 	void configureHandlerExceptionResolvers(List<HandlerExceptionResolver> exceptionResolvers);
 
 	/**
+	 * A hook for extending or modifying the list of
+	 * {@link HandlerExceptionResolver}s after it has been configured. This may
+	 * be useful for example to allow default resolvers to be registered and then
+	 * insert a custom one through this method.
+	 * @param exceptionResolvers the list of configured resolvers to extend.
+	 * @since 4.3
+	 */
+	void extendHandlerExceptionResolvers(List<HandlerExceptionResolver> exceptionResolvers);
+
+	/**
 	 * Add Spring MVC lifecycle interceptors for pre- and post-processing of
 	 * controller method invocations. Interceptors can be registered to apply
 	 * to all requests or be limited to a subset of URL patterns.
+	 * <p><strong>Note</strong> that interceptors registered here only apply to
+	 * controllers and not to resource handler requests. To intercept requests for
+	 * static resources either declare a
+	 * {@link org.springframework.web.servlet.handler.MappedInterceptor MappedInterceptor}
+	 * bean or switch to advanced configuration mode by extending
+	 * {@link org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport
+	 * WebMvcConfigurationSupport} and then override {@code resourceHandlerMapping}.
 	 */
 	void addInterceptors(InterceptorRegistry registry);
 
@@ -162,5 +191,11 @@ public interface WebMvcConfigurer {
 	 * Servlet container's default handling of static resources.
 	 */
 	void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer);
+
+	/**
+	 * Configure cross origin requests processing.
+	 * @since 4.2
+	 */
+	void addCorsMappings(CorsRegistry registry);
 
 }

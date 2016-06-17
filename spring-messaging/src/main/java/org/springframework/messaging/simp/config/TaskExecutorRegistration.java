@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -52,7 +52,7 @@ public class TaskExecutorRegistration {
 	 * in {@link java.util.concurrent.ThreadPoolExecutor ThreadPoolExecutor}. When
 	 * this strategy is used, the {@link #maxPoolSize(int) maxPoolSize} is ignored.
 	 * <p>By default this is set to twice the value of
-	 * {@link Runtime#availableProcessors()}. In an an application where tasks do not
+	 * {@link Runtime#availableProcessors()}. In an application where tasks do not
 	 * block frequently, the number should be closer to or equal to the number of
 	 * available CPUs/cores.
 	 */

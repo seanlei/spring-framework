@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import org.springframework.web.servlet.view.AbstractUrlBasedView;
  * {@link org.springframework.web.servlet.View} implementation that retrieves a
  * Tiles definition. The "url" property is interpreted as name of a Tiles definition.
  *
- * <p>This class builds on Tiles2, which requires JSP 2.0.
+ * <p>This class builds on Tiles, which requires JSP 2.0.
  * JSTL support is integrated out of the box due to JSTL's inclusion in JSP 2.0.
  * <b>Note: Spring 4.0 requires Tiles 2.2.2.</b>
  *
@@ -47,12 +47,33 @@ import org.springframework.web.servlet.view.AbstractUrlBasedView;
  * the ServletContext. This container is typically set up via a
  * {@link TilesConfigurer} bean definition in the application context.
  *
+ * <p><b>NOTE: Tiles 2 support is deprecated in favor of Tiles 3 and will be removed
+ * as of Spring Framework 5.0.</b>.
+ *
  * @author Juergen Hoeller
+ * @author Sebastien Deleuze
  * @since 2.5
  * @see #setUrl
  * @see TilesConfigurer
+ * @deprecated as of Spring 4.2, in favor of Tiles 3
  */
+@Deprecated
 public class TilesView extends AbstractUrlBasedView {
+
+	private boolean alwaysInclude = false;
+
+
+	/**
+	 * Specify whether to always include the view rather than forward to it.
+	 * <p>Default is "false". Switch this flag on to enforce the use of a
+	 * Servlet include, even if a forward would be possible.
+	 * @since 4.1.2
+	 * @see TilesViewResolver#setAlwaysInclude
+	 */
+	public void setAlwaysInclude(boolean alwaysInclude) {
+		this.alwaysInclude = alwaysInclude;
+	}
+
 
 	@Override
 	public boolean checkResource(final Locale locale) throws Exception {
@@ -85,6 +106,9 @@ public class TilesView extends AbstractUrlBasedView {
 
 		exposeModelAsRequestAttributes(model, request);
 		JstlUtils.exposeLocalizationContext(new RequestContext(request, servletContext));
+		if (this.alwaysInclude) {
+			ServletUtil.setForceInclude(request, true);
+		}
 		container.render(getUrl(), request, response);
 	}
 

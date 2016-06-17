@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,11 @@
 
 package org.springframework.test.web.servlet.setup;
 
+import java.util.ArrayList;
+import java.util.List;
+import javax.servlet.Filter;
+import javax.servlet.ServletContext;
+
 import org.springframework.mock.web.MockServletConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MockMvcBuilderSupport;
@@ -27,12 +32,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.util.Assert;
 import org.springframework.web.context.WebApplicationContext;
-
-import javax.servlet.Filter;
-import javax.servlet.ServletContext;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * An abstract implementation of {@link org.springframework.test.web.servlet.MockMvcBuilder}
@@ -56,7 +55,7 @@ public abstract class AbstractMockMvcBuilder<B extends AbstractMockMvcBuilder<B>
 
 	private final List<ResultHandler> globalResultHandlers = new ArrayList<ResultHandler>();
 
-	private Boolean dispatchOptions = Boolean.FALSE;
+	private Boolean dispatchOptions = Boolean.TRUE;
 
 	private final List<MockMvcConfigurer> configurers = new ArrayList<MockMvcConfigurer>(4);
 

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,6 @@
 package org.springframework.web.servlet.resource;
 
 import java.io.IOException;
-
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +37,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * @author Jeremy Grelle
  * @author Rossen Stoyanchev
  * @author Sam Brannen
+ * @author Brian Clozel
  * @since 4.1
  */
 public class ResourceUrlEncodingFilter extends OncePerRequestFilter {
@@ -55,28 +55,65 @@ public class ResourceUrlEncodingFilter extends OncePerRequestFilter {
 
 	private static class ResourceUrlEncodingResponseWrapper extends HttpServletResponseWrapper {
 
-		private HttpServletRequest request;
+		private final HttpServletRequest request;
 
+		/* Cache the index and prefix of the path within the DispatcherServlet mapping */
+		private Integer indexLookupPath;
 
-		private ResourceUrlEncodingResponseWrapper(HttpServletRequest request, HttpServletResponse wrapped) {
+		private String prefixLookupPath;
+
+		public ResourceUrlEncodingResponseWrapper(HttpServletRequest request, HttpServletResponse wrapped) {
 			super(wrapped);
 			this.request = request;
 		}
 
 		@Override
 		public String encodeURL(String url) {
-			String name = ResourceUrlProviderExposingInterceptor.RESOURCE_URL_PROVIDER_ATTR;
-			ResourceUrlProvider urlProvider = (ResourceUrlProvider) this.request.getAttribute(name);
-			if (urlProvider != null) {
-				String translatedUrl = urlProvider.getForRequestUrl(this.request, url);
-				if (translatedUrl != null) {
-					return super.encodeURL(translatedUrl);
+			ResourceUrlProvider resourceUrlProvider = getResourceUrlProvider();
+			if (resourceUrlProvider == null) {
+				logger.debug("Request attribute exposing ResourceUrlProvider not found");
+				return super.encodeURL(url);
+			}
+
+			initLookupPath(resourceUrlProvider);
+			if (url.startsWith(this.prefixLookupPath)) {
+				int suffixIndex = getQueryParamsIndex(url);
+				String suffix = url.substring(suffixIndex);
+				String lookupPath = url.substring(this.indexLookupPath, suffixIndex);
+				lookupPath = resourceUrlProvider.getForLookupPath(lookupPath);
+				if (lookupPath != null) {
+					return super.encodeURL(this.prefixLookupPath + lookupPath + suffix);
 				}
 			}
-			else {
-				logger.debug("Request attribute exposing ResourceUrlProvider not found under name: " + name);
-			}
+
 			return super.encodeURL(url);
+		}
+
+		private ResourceUrlProvider getResourceUrlProvider() {
+			return (ResourceUrlProvider) this.request.getAttribute(
+					ResourceUrlProviderExposingInterceptor.RESOURCE_URL_PROVIDER_ATTR);
+		}
+
+		private void initLookupPath(ResourceUrlProvider urlProvider) {
+			if (this.indexLookupPath == null) {
+				String requestUri = urlProvider.getPathHelper().getRequestUri(this.request);
+				String lookupPath = urlProvider.getPathHelper().getLookupPathForRequest(this.request);
+				this.indexLookupPath = requestUri.lastIndexOf(lookupPath);
+				this.prefixLookupPath = requestUri.substring(0, this.indexLookupPath);
+
+				if ("/".equals(lookupPath) && !"/".equals(requestUri)) {
+					String contextPath = urlProvider.getPathHelper().getContextPath(this.request);
+					if (requestUri.equals(contextPath)) {
+						this.indexLookupPath = requestUri.length();
+						this.prefixLookupPath = requestUri;
+					}
+				}
+			}
+		}
+
+		private int getQueryParamsIndex(String url) {
+			int index = url.indexOf("?");
+			return (index > 0 ? index : url.length());
 		}
 	}
 

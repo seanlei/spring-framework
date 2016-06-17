@@ -27,6 +27,7 @@ import javax.management.NotificationListener;
 import javax.management.ObjectName;
 
 import org.junit.Test;
+
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.jmx.AbstractMBeanServerTests;
 import org.springframework.jmx.JmxTestBean;
@@ -171,7 +172,8 @@ public class NotificationListenerTests extends AbstractMBeanServerTests {
 				if (notification instanceof AttributeChangeNotification) {
 					AttributeChangeNotification changeNotification = (AttributeChangeNotification) notification;
 					return "Name".equals(changeNotification.getAttributeName());
-				} else {
+				}
+				else {
 					return false;
 				}
 			}
@@ -199,7 +201,8 @@ public class NotificationListenerTests extends AbstractMBeanServerTests {
 		try {
 			new NotificationListenerBean().afterPropertiesSet();
 			fail("Must have thrown an IllegalArgumentException (no NotificationListener supplied)");
-		} catch (IllegalArgumentException expected) {
+		}
+		catch (IllegalArgumentException expected) {
 		}
 	}
 
@@ -462,7 +465,8 @@ public class NotificationListenerTests extends AbstractMBeanServerTests {
 				if (currentCount != null) {
 					int count = currentCount.intValue() + 1;
 					this.attributeCounts.put(attributeName, new Integer(count));
-				} else {
+				}
+				else {
 					this.attributeCounts.put(attributeName, new Integer(1));
 				}
 

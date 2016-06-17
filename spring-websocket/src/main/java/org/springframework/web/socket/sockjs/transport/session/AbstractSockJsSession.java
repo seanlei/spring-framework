@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,6 @@ import java.util.concurrent.ScheduledFuture;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.core.NestedCheckedException;
 import org.springframework.util.Assert;
 import org.springframework.web.socket.CloseStatus;
@@ -53,7 +52,7 @@ import org.springframework.web.socket.sockjs.transport.SockJsSession;
  */
 public abstract class AbstractSockJsSession implements SockJsSession {
 
-	private static enum State {NEW, OPEN, CLOSED}
+	private enum State {NEW, OPEN, CLOSED}
 
 
 	/**
@@ -158,9 +157,7 @@ public abstract class AbstractSockJsSession implements SockJsSession {
 
 	public final void sendMessage(WebSocketMessage<?> message) throws IOException {
 		Assert.state(!isClosed(), "Cannot send a message when session is closed");
-		if (!(message instanceof TextMessage)) {
-			throw new IllegalArgumentException("Expected text message: " + message);
-		}
+		Assert.isInstanceOf(TextMessage.class, message, "SockJS supports text messages only: " + message);
 		sendMessageInternal(((TextMessage) message).getPayload());
 	}
 
@@ -342,7 +339,7 @@ public abstract class AbstractSockJsSession implements SockJsSession {
 			catch (Throwable closeFailure) {
 				// Nothing of consequence, already forced disconnect
 			}
-			throw new SockJsTransportFailureException("Failed to write " + frame, this.getId(), ex);
+			throw new SockJsTransportFailureException("Failed to write " + frame, getId(), ex);
 		}
 	}
 
@@ -363,7 +360,7 @@ public abstract class AbstractSockJsSession implements SockJsSession {
 			}
 		}
 		else {
-			logger.debug("Terminating connection after failure to send message to client.", failure);
+			logger.debug("Terminating connection after failure to send message to client", failure);
 		}
 	}
 

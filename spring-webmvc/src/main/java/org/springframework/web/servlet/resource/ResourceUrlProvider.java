@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,26 +16,25 @@
 
 package org.springframework.web.servlet.resource;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.core.OrderComparator;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.util.Assert;
 import org.springframework.util.PathMatcher;
-import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.util.UrlPathHelper;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 
 /**
  * A central component to use to obtain the public URL path that clients should
@@ -56,7 +55,7 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 
 	private PathMatcher pathMatcher = new AntPathMatcher();
 
-	private final Map<String, ResourceHttpRequestHandler> handlerMap = new HashMap<String, ResourceHttpRequestHandler>();
+	private final Map<String, ResourceHttpRequestHandler> handlerMap = new LinkedHashMap<String, ResourceHttpRequestHandler>();
 
 	private boolean autodetect = true;
 
@@ -71,7 +70,7 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 	}
 
 	/**
-	 * @return the configured {@code UrlPathHelper}.
+	 * Return the configured {@code UrlPathHelper}.
 	 */
 	public UrlPathHelper getPathHelper() {
 		return this.pathHelper;
@@ -86,7 +85,7 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 	}
 
 	/**
-	 * @return the configured {@code PathMatcher}.
+	 * Return the configured {@code PathMatcher}.
 	 */
 	public PathMatcher getPathMatcher() {
 		return this.pathMatcher;
@@ -94,7 +93,6 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 
 	/**
 	 * Manually configure the resource mappings.
-	 *
 	 * <p><strong>Note:</strong> by default resource mappings are auto-detected
 	 * from the Spring {@code ApplicationContext}. However if this property is
 	 * used, the auto-detection is turned off.
@@ -108,7 +106,7 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 	}
 
 	/**
-	 * @return the resource mappings, either manually configured or auto-detected
+	 * Return the resource mappings, either manually configured or auto-detected
 	 * when the Spring {@code ApplicationContext} is refreshed.
 	 */
 	public Map<String, ResourceHttpRequestHandler> getHandlerMap() {
@@ -116,7 +114,7 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 	}
 
 	/**
-	 * @return {@code false} if resource mappings were manually configured,
+	 * Return {@code false} if resource mappings were manually configured,
 	 * {@code true} otherwise.
 	 */
 	public boolean isAutodetect() {
@@ -131,16 +129,18 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 			if (this.handlerMap.isEmpty() && logger.isDebugEnabled()) {
 				logger.debug("No resource handling mappings found");
 			}
+			if (!this.handlerMap.isEmpty()) {
+				this.autodetect = false;
+			}
 		}
 	}
 
 	protected void detectResourceHandlers(ApplicationContext appContext) {
-
 		logger.debug("Looking for resource handler mappings");
 
 		Map<String, SimpleUrlHandlerMapping> map = appContext.getBeansOfType(SimpleUrlHandlerMapping.class);
 		List<SimpleUrlHandlerMapping> handlerMappings = new ArrayList<SimpleUrlHandlerMapping>(map.values());
-		Collections.sort(handlerMappings, new OrderComparator());
+		AnnotationAwareOrderComparator.sort(handlerMappings);
 
 		for (SimpleUrlHandlerMapping hm : handlerMappings) {
 			for (String pattern : hm.getHandlerMap().keySet()) {
@@ -163,30 +163,32 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 	 * A variation on {@link #getForLookupPath(String)} that accepts a full request
 	 * URL path (i.e. including context and servlet path) and returns the full request
 	 * URL path to expose for public use.
-	 *
 	 * @param request the current request
 	 * @param requestUrl the request URL path to resolve
-	 * @return the resolved public URL path or {@code null} if unresolved
+	 * @return the resolved public URL path, or {@code null} if unresolved
 	 */
 	public final String getForRequestUrl(HttpServletRequest request, String requestUrl) {
 		if (logger.isTraceEnabled()) {
-			logger.trace("Getting resource URL for requestURL=" + requestUrl);
+			logger.trace("Getting resource URL for request URL \"" + requestUrl + "\"");
 		}
+		int prefixIndex = getLookupPathIndex(request);
+		int suffixIndex = getQueryParamsIndex(requestUrl);
+		String prefix = requestUrl.substring(0, prefixIndex);
+		String suffix = requestUrl.substring(suffixIndex);
+		String lookupPath = requestUrl.substring(prefixIndex, suffixIndex);
+		String resolvedLookupPath = getForLookupPath(lookupPath);
+		return (resolvedLookupPath != null ? prefix + resolvedLookupPath + suffix : null);
+	}
 
-		String pathWithinMapping = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-		if (pathWithinMapping == null) {
-			logger.trace("Request attribute with lookup path not found, calculating instead.");
-			pathWithinMapping = getPathHelper().getLookupPathForRequest(request);
-		}
+	private int getLookupPathIndex(HttpServletRequest request) {
+		String requestUri = getPathHelper().getRequestUri(request);
+		String lookupPath = getPathHelper().getLookupPathForRequest(request);
+		return requestUri.indexOf(lookupPath);
+	}
 
-		int index = getPathHelper().getRequestUri(request).indexOf(pathWithinMapping);
-		Assert.state(index != -1, "Failed to determine lookup path: " + requestUrl);
-
-		String prefix = requestUrl.substring(0, index);
-		String lookupPath = requestUrl.substring(index);
-		String resolvedPath = getForLookupPath(lookupPath);
-
-		return (resolvedPath != null) ? prefix + resolvedPath : null;
+	private int getQueryParamsIndex(String lookupPath) {
+		int index = lookupPath.indexOf("?");
+		return index > 0 ? index : lookupPath.length();
 	}
 
 	/**
@@ -194,38 +196,50 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 	 * if a match is found use the {@code ResourceResolver} chain of the matched
 	 * {@code ResourceHttpRequestHandler} to resolve the URL path to expose for
 	 * public use.
-	 *
-	 * <p>It is expected the given path is what Spring MVC would use for request
-	 * mapping purposes, i.e. excluding context and servlet path portions.
-	 *
+	 * <p>It is expected that the given path is what Spring MVC would use for
+	 * request mapping purposes, i.e. excluding context and servlet path portions.
+	 * <p>If several handler mappings match, the handler used will be the one
+	 * configured with the most specific pattern.
 	 * @param lookupPath the lookup path to check
-	 * @return the resolved public URL path or {@code null} if unresolved
+	 * @return the resolved public URL path, or {@code null} if unresolved
 	 */
 	public final String getForLookupPath(String lookupPath) {
 		if (logger.isTraceEnabled()) {
-			logger.trace("Getting resource URL for lookupPath=" + lookupPath);
+			logger.trace("Getting resource URL for lookup path \"" + lookupPath + "\"");
 		}
+
+		List<String> matchingPatterns = new ArrayList<String>();
 		for (String pattern : this.handlerMap.keySet()) {
-			if (!getPathMatcher().match(pattern, lookupPath)) {
-				continue;
+			if (getPathMatcher().match(pattern, lookupPath)) {
+				matchingPatterns.add(pattern);
 			}
-			String pathWithinMapping = getPathMatcher().extractPathWithinPattern(pattern, lookupPath);
-			String pathMapping = lookupPath.substring(0, lookupPath.indexOf(pathWithinMapping));
-			if (logger.isTraceEnabled()) {
-				logger.trace("Invoking ResourceResolverChain for URL pattern=\"" + pattern + "\"");
-			}
-			ResourceHttpRequestHandler handler = this.handlerMap.get(pattern);
-			ResourceResolverChain chain = new DefaultResourceResolverChain(handler.getResourceResolvers());
-			String resolved = chain.resolveUrlPath(pathWithinMapping, handler.getLocations());
-			if (resolved == null) {
-				throw new IllegalStateException("Failed to get public resource URL path for " + pathWithinMapping);
-			}
-			if (logger.isTraceEnabled()) {
-				logger.trace("Resolved public resource URL path=\"" + resolved + "\"");
-			}
-			return pathMapping + resolved;
 		}
-		logger.debug("No matching resource mapping");
+
+		if (!matchingPatterns.isEmpty()) {
+			Comparator<String> patternComparator = getPathMatcher().getPatternComparator(lookupPath);
+			Collections.sort(matchingPatterns, patternComparator);
+			for (String pattern : matchingPatterns) {
+				String pathWithinMapping = getPathMatcher().extractPathWithinPattern(pattern, lookupPath);
+				String pathMapping = lookupPath.substring(0, lookupPath.indexOf(pathWithinMapping));
+				if (logger.isTraceEnabled()) {
+					logger.trace("Invoking ResourceResolverChain for URL pattern \"" + pattern + "\"");
+				}
+				ResourceHttpRequestHandler handler = this.handlerMap.get(pattern);
+				ResourceResolverChain chain = new DefaultResourceResolverChain(handler.getResourceResolvers());
+				String resolved = chain.resolveUrlPath(pathWithinMapping, handler.getLocations());
+				if (resolved == null) {
+					continue;
+				}
+				if (logger.isTraceEnabled()) {
+					logger.trace("Resolved public resource URL path \"" + resolved + "\"");
+				}
+				return pathMapping + resolved;
+			}
+		}
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("No matching resource mapping for lookup path \"" + lookupPath + "\"");
+		}
 		return null;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.web.socket.config;
 import java.util.Arrays;
 import java.util.List;
 
-import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -32,8 +31,10 @@ import org.springframework.beans.factory.support.ManagedMap;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
+import org.springframework.util.StringUtils;
 import org.springframework.util.xml.DomUtils;
-import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
+import org.springframework.web.socket.server.support.OriginHandshakeInterceptor;
+import org.springframework.web.socket.server.support.WebSocketHandlerMapping;
 import org.springframework.web.socket.server.support.WebSocketHttpRequestHandler;
 import org.springframework.web.socket.sockjs.support.SockJsHttpRequestHandler;
 
@@ -63,7 +64,7 @@ class HandlersBeanDefinitionParser implements BeanDefinitionParser {
 		String orderAttribute = element.getAttribute("order");
 		int order = orderAttribute.isEmpty() ? DEFAULT_MAPPING_ORDER : Integer.valueOf(orderAttribute);
 
-		RootBeanDefinition handlerMappingDef = new RootBeanDefinition(SimpleUrlHandlerMapping.class);
+		RootBeanDefinition handlerMappingDef = new RootBeanDefinition(WebSocketHandlerMapping.class);
 		handlerMappingDef.setSource(source);
 		handlerMappingDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
 		handlerMappingDef.getPropertyValues().add("order", order);
@@ -79,7 +80,10 @@ class HandlersBeanDefinitionParser implements BeanDefinitionParser {
 		else {
 			RuntimeBeanReference handshakeHandler = WebSocketNamespaceUtils.registerHandshakeHandler(element, context, source);
 			Element interceptorsElement = DomUtils.getChildElementByTagName(element, "handshake-interceptors");
-			ManagedList<?> interceptors = WebSocketNamespaceUtils.parseBeanSubElements(interceptorsElement, context);
+			ManagedList<? super Object> interceptors = WebSocketNamespaceUtils.parseBeanSubElements(interceptorsElement, context);
+			String allowedOriginsAttribute = element.getAttribute("allowed-origins");
+			List<String> allowedOrigins = Arrays.asList(StringUtils.tokenizeToStringArray(allowedOriginsAttribute, ","));
+			interceptors.add(new OriginHandshakeInterceptor(allowedOrigins));
 			strategy = new WebSocketHandlerMappingStrategy(handshakeHandler, interceptors);
 		}
 

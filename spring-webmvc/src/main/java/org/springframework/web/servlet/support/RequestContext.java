@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,12 +89,6 @@ public class RequestContext {
 	 */
 	public static final String WEB_APPLICATION_CONTEXT_ATTRIBUTE = RequestContext.class.getName() + ".CONTEXT";
 
-	/**
-	 * The name of the bean to use to look up in an implementation of
-	 * {@link RequestDataValueProcessor} has been configured.
-	 */
-	private static final String REQUEST_DATA_VALUE_PROCESSOR_BEAN_NAME = "requestDataValueProcessor";
-
 
 	protected static final boolean jstlPresent = ClassUtils.isPresent("javax.servlet.jsp.jstl.core.Config",
 			RequestContext.class.getClassLoader());
@@ -114,6 +108,8 @@ public class RequestContext {
 	private Theme theme;
 
 	private Boolean defaultHtmlEscape;
+
+	private Boolean responseEncodedHtmlEscape;
 
 	private UrlPathHelper urlPathHelper;
 
@@ -234,7 +230,11 @@ public class RequestContext {
 		// ServletContext needs to be specified to be able to fall back to the root context!
 		this.webApplicationContext = (WebApplicationContext) request.getAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE);
 		if (this.webApplicationContext == null) {
-			this.webApplicationContext = RequestContextUtils.getWebApplicationContext(request, servletContext);
+			this.webApplicationContext = RequestContextUtils.findWebApplicationContext(request, servletContext);
+			if (this.webApplicationContext == null) {
+				throw new IllegalStateException("No WebApplicationContext found: not in a DispatcherServlet " +
+						"request and no ContextLoaderListener registered?");
+			}
 		}
 
 		// Determine locale to use for this RequestContext.
@@ -263,11 +263,15 @@ public class RequestContext {
 		// context-param in web.xml, if any.
 		this.defaultHtmlEscape = WebUtils.getDefaultHtmlEscape(this.webApplicationContext.getServletContext());
 
+		// Determine response-encoded HTML escape setting from the "responseEncodedHtmlEscape"
+		// context-param in web.xml, if any.
+		this.responseEncodedHtmlEscape = WebUtils.getResponseEncodedHtmlEscape(this.webApplicationContext.getServletContext());
+
 		this.urlPathHelper = new UrlPathHelper();
 
-		if (this.webApplicationContext.containsBean(REQUEST_DATA_VALUE_PROCESSOR_BEAN_NAME)) {
+		if (this.webApplicationContext.containsBean(RequestContextUtils.REQUEST_DATA_VALUE_PROCESSOR_BEAN_NAME)) {
 			this.requestDataValueProcessor = this.webApplicationContext.getBean(
-					REQUEST_DATA_VALUE_PROCESSOR_BEAN_NAME, RequestDataValueProcessor.class);
+					RequestContextUtils.REQUEST_DATA_VALUE_PROCESSOR_BEAN_NAME, RequestDataValueProcessor.class);
 		}
 	}
 
@@ -483,6 +487,27 @@ public class RequestContext {
 	public Boolean getDefaultHtmlEscape() {
 		return this.defaultHtmlEscape;
 	}
+
+	/**
+	 * Is HTML escaping using the response encoding by default?
+	 * If enabled, only XML markup significant characters will be escaped with UTF-* encodings.
+	 * <p>Falls back to {@code true} in case of no explicit default given, as of Spring 4.2.
+	 * @since 4.1.2
+	 */
+	public boolean isResponseEncodedHtmlEscape() {
+		return (this.responseEncodedHtmlEscape == null || this.responseEncodedHtmlEscape.booleanValue());
+	}
+
+	/**
+	 * Return the default setting about use of response encoding for HTML escape setting,
+	 * differentiating between no default specified and an explicit value.
+	 * @return whether default use of response encoding HTML escaping is enabled (null = no explicit default)
+	 * @since 4.1.2
+	 */
+	public Boolean getResponseEncodedHtmlEscape() {
+		return this.responseEncodedHtmlEscape;
+	}
+
 
 	/**
 	 * Set the UrlPathHelper to use for context path and request URI decoding.

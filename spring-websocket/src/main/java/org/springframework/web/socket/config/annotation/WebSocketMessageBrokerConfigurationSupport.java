@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,15 +18,22 @@ package org.springframework.web.socket.config.annotation;
 
 import org.springframework.beans.factory.config.CustomScopeConfigurer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.SimpSessionScope;
+import org.springframework.messaging.simp.annotation.support.SimpAnnotationMethodMessageHandler;
 import org.springframework.messaging.simp.broker.AbstractBrokerMessageHandler;
 import org.springframework.messaging.simp.config.AbstractMessageBrokerConfiguration;
 import org.springframework.messaging.simp.stomp.StompBrokerRelayMessageHandler;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.messaging.simp.user.SimpUserRegistry;
+import org.springframework.messaging.simp.user.UserSessionRegistryAdapter;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.WebSocketMessageBrokerStats;
+import org.springframework.web.socket.handler.WebSocketHandlerDecoratorFactory;
+import org.springframework.web.socket.messaging.DefaultSimpUserRegistry;
 import org.springframework.web.socket.messaging.SubProtocolWebSocketHandler;
+import org.springframework.web.socket.messaging.WebSocketAnnotationMethodMessageHandler;
 
 /**
  * Extends {@link AbstractMessageBrokerConfiguration} and adds configuration for
@@ -45,10 +52,28 @@ public abstract class WebSocketMessageBrokerConfigurationSupport extends Abstrac
 	private WebSocketTransportRegistration transportRegistration;
 
 
+	@Override
+	protected SimpAnnotationMethodMessageHandler createAnnotationMethodMessageHandler() {
+		return new WebSocketAnnotationMethodMessageHandler(clientInboundChannel(),
+				clientOutboundChannel(), brokerMessagingTemplate());
+	}
+
+	@Override
+	@SuppressWarnings("deprecation")
+	protected SimpUserRegistry createLocalUserRegistry() {
+		org.springframework.messaging.simp.user.UserSessionRegistry sessionRegistry = userSessionRegistry();
+		if (sessionRegistry != null) {
+			return new UserSessionRegistryAdapter(sessionRegistry);
+		}
+		return new DefaultSimpUserRegistry();
+	}
+
 	@Bean
+	@SuppressWarnings("deprecation")
 	public HandlerMapping stompWebSocketHandlerMapping() {
-		WebMvcStompEndpointRegistry registry = new WebMvcStompEndpointRegistry(subProtocolWebSocketHandler(),
-				getTransportRegistration(), userSessionRegistry(), messageBrokerSockJsTaskScheduler());
+		WebSocketHandler handler = decorateWebSocketHandler(subProtocolWebSocketHandler());
+		WebMvcStompEndpointRegistry registry = new WebMvcStompEndpointRegistry(handler,
+				getTransportRegistration(), userSessionRegistry(), messageBrokerTaskScheduler());
 		registry.setApplicationContext(getApplicationContext());
 		registerStompEndpoints(registry);
 		return registry.getHandlerMapping();
@@ -57,6 +82,13 @@ public abstract class WebSocketMessageBrokerConfigurationSupport extends Abstrac
 	@Bean
 	public WebSocketHandler subProtocolWebSocketHandler() {
 		return new SubProtocolWebSocketHandler(clientInboundChannel(), clientOutboundChannel());
+	}
+
+	protected WebSocketHandler decorateWebSocketHandler(WebSocketHandler handler) {
+		for (WebSocketHandlerDecoratorFactory factory : getTransportRegistration().getDecoratorFactories()) {
+			handler = factory.decorate(handler);
+		}
+		return handler;
 	}
 
 	protected final WebSocketTransportRegistration getTransportRegistration() {
@@ -71,31 +103,6 @@ public abstract class WebSocketMessageBrokerConfigurationSupport extends Abstrac
 	}
 
 	protected abstract void registerStompEndpoints(StompEndpointRegistry registry);
-
-	/**
-	 * The default TaskScheduler to use if none is configured via
-	 * {@link SockJsServiceRegistration#setTaskScheduler(org.springframework.scheduling.TaskScheduler)}, i.e.
-	 * <pre class="code">
-	 * &#064;Configuration
-	 * &#064;EnableWebSocketMessageBroker
-	 * public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
-	 *
-	 *   public void registerStompEndpoints(StompEndpointRegistry registry) {
-	 *     registry.addEndpoint("/stomp").withSockJS().setTaskScheduler(myScheduler());
-	 *   }
-	 *
-	 *   // ...
-	 * }
-	 * </pre>
-	 */
-	@Bean
-	public ThreadPoolTaskScheduler messageBrokerSockJsTaskScheduler() {
-		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-		scheduler.setThreadNamePrefix("MessageBrokerSockJS-");
-		scheduler.setPoolSize(Runtime.getRuntime().availableProcessors());
-		scheduler.setRemoveOnCancelPolicy(true);
-		return scheduler;
-	}
 
 	@Bean
 	public static CustomScopeConfigurer webSocketScopeConfigurer() {
@@ -118,8 +125,17 @@ public abstract class WebSocketMessageBrokerConfigurationSupport extends Abstrac
 		stats.setStompBrokerRelay(brokerRelay);
 		stats.setInboundChannelExecutor(clientInboundChannelExecutor());
 		stats.setOutboundChannelExecutor(clientOutboundChannelExecutor());
-		stats.setSockJsTaskScheduler(messageBrokerSockJsTaskScheduler());
+		stats.setSockJsTaskScheduler(messageBrokerTaskScheduler());
 		return stats;
+	}
+
+	@Override
+	protected MappingJackson2MessageConverter createJacksonConverter() {
+		MappingJackson2MessageConverter messageConverter = super.createJacksonConverter();
+		// Use Jackson builder in order to have JSR-310 and Joda-Time modules registered automatically
+		messageConverter.setObjectMapper(Jackson2ObjectMapperBuilder.json()
+				.applicationContext(this.getApplicationContext()).build());
+		return messageConverter;
 	}
 
 }

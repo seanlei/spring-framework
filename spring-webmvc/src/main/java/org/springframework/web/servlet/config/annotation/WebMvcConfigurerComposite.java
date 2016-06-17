@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 /**
- * An {@link WebMvcConfigurer} implementation that delegates to other {@link WebMvcConfigurer} instances.
+ * A {@link WebMvcConfigurer} that delegates to one or more others.
  *
  * @author Rossen Stoyanchev
  * @since 3.1
@@ -79,6 +79,13 @@ class WebMvcConfigurerComposite implements WebMvcConfigurer {
 	}
 
 	@Override
+	public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+		for (WebMvcConfigurer delegate : this.delegates) {
+			delegate.extendMessageConverters(converters);
+		}
+	}
+
+	@Override
 	public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
 		for (WebMvcConfigurer delegate : this.delegates) {
 			delegate.addArgumentResolvers(argumentResolvers);
@@ -94,6 +101,13 @@ class WebMvcConfigurerComposite implements WebMvcConfigurer {
 
 	@Override
 	public void configureHandlerExceptionResolvers(List<HandlerExceptionResolver> exceptionResolvers) {
+		for (WebMvcConfigurer delegate : this.delegates) {
+			delegate.configureHandlerExceptionResolvers(exceptionResolvers);
+		}
+	}
+
+	@Override
+	public void extendHandlerExceptionResolvers(List<HandlerExceptionResolver> exceptionResolvers) {
 		for (WebMvcConfigurer delegate : this.delegates) {
 			delegate.configureHandlerExceptionResolvers(exceptionResolvers);
 		}
@@ -144,6 +158,13 @@ class WebMvcConfigurerComposite implements WebMvcConfigurer {
 			}
 		}
 		return selectSingleInstance(candidates, Validator.class);
+	}
+
+	@Override
+	public void addCorsMappings(CorsRegistry registry) {
+		for (WebMvcConfigurer delegate : this.delegates) {
+			delegate.addCorsMappings(registry);
+		}
 	}
 
 	private <T> T selectSingleInstance(List<T> instances, Class<T> instanceType) {

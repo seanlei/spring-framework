@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -437,31 +437,22 @@ public class ConstructorReference extends SpelNodeImpl {
 
 		ReflectiveConstructorExecutor executor = (ReflectiveConstructorExecutor) this.cachedExecutor;
 		Constructor<?> constructor = executor.getConstructor();
-		return (!constructor.isVarArgs() && Modifier.isPublic(constructor.getModifiers()) &&
+		return (Modifier.isPublic(constructor.getModifiers()) &&
 				Modifier.isPublic(constructor.getDeclaringClass().getModifiers()));
 	}
 	
 	@Override
 	public void generateCode(MethodVisitor mv, CodeFlow cf) {
 		ReflectiveConstructorExecutor executor = ((ReflectiveConstructorExecutor) this.cachedExecutor);
-		Constructor<?> constructor = executor.getConstructor();
-		
-		String classSlashedDescriptor = constructor.getDeclaringClass().getName().replace('.', '/');
-		String[] paramDescriptors = CodeFlow.toParamDescriptors(constructor);
-		mv.visitTypeInsn(NEW, classSlashedDescriptor);
+		Constructor<?> constructor = executor.getConstructor();		
+		String classDesc = constructor.getDeclaringClass().getName().replace('.', '/');
+		mv.visitTypeInsn(NEW, classDesc);
 		mv.visitInsn(DUP);
-		for (int c = 1; c < this.children.length; c++) { // children[0] is the type of the constructor
-			SpelNodeImpl child = this.children[c];
-			cf.enterCompilationScope();
-			child.generateCode(mv, cf);
-			// Check if need to box it for the method reference?
-			if (CodeFlow.isPrimitive(cf.lastDescriptor()) && paramDescriptors[c-1].charAt(0) == 'L') {
-				CodeFlow.insertBoxIfNecessary(mv, cf.lastDescriptor().charAt(0));
-			}
-			cf.exitCompilationScope();
-		}
-		mv.visitMethodInsn(INVOKESPECIAL, classSlashedDescriptor, "<init>",
-				CodeFlow.createSignatureDescriptor(constructor), false);
+		// children[0] is the type of the constructor, don't want to include that in argument processing
+		SpelNodeImpl[] arguments = new SpelNodeImpl[children.length - 1];
+		System.arraycopy(children, 1, arguments, 0, children.length - 1);
+		generateCodeForArguments(mv, cf, constructor, arguments);	
+		mv.visitMethodInsn(INVOKESPECIAL, classDesc, "<init>", CodeFlow.createSignatureDescriptor(constructor), false);
 		cf.pushDescriptor(this.exitTypeDescriptor);
 	}
 

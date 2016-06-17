@@ -24,6 +24,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+
 import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.mock.web.test.MockHttpServletResponse;
 import org.springframework.ui.ModelMap;
@@ -89,7 +90,7 @@ public class InterceptorRegistryTests {
 		this.registry.addInterceptor(this.interceptor1).addPathPatterns("/path1/**").excludePathPatterns("/path1/secret");
 		this.registry.addInterceptor(this.interceptor2).addPathPatterns("/path2");
 
-		assertEquals(Arrays.asList(this.interceptor1), getInterceptorsForPath("/path1"));
+		assertEquals(Arrays.asList(this.interceptor1), getInterceptorsForPath("/path1/test"));
 		assertEquals(Arrays.asList(this.interceptor2), getInterceptorsForPath("/path2"));
 		assertEquals(Collections.emptyList(), getInterceptorsForPath("/path1/secret"));
 	}

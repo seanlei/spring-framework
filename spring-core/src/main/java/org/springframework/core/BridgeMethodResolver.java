@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ public abstract class BridgeMethodResolver {
 	private static Method findGenericDeclaration(Method bridgeMethod) {
 		// Search parent types for method that has same signature as bridge.
 		Class<?> superclass = bridgeMethod.getDeclaringClass().getSuperclass();
-		while (superclass != null && !Object.class.equals(superclass)) {
+		while (superclass != null && Object.class != superclass) {
 			Method method = searchForMatch(superclass, bridgeMethod);
 			if (method != null && !method.isBridge()) {
 				return method;
@@ -211,9 +211,8 @@ public abstract class BridgeMethodResolver {
 		if (bridgeMethod == bridgedMethod) {
 			return true;
 		}
-		return Arrays.equals(bridgeMethod.getParameterTypes(), bridgedMethod.getParameterTypes()) &&
-				bridgeMethod.getReturnType().equals(bridgedMethod.getReturnType());
+		return (Arrays.equals(bridgeMethod.getParameterTypes(), bridgedMethod.getParameterTypes()) &&
+				bridgeMethod.getReturnType().equals(bridgedMethod.getReturnType()));
 	}
-
 
 }

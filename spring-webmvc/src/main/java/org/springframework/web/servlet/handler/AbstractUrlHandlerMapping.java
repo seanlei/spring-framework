@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -55,6 +54,8 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping {
 
 	private Object rootHandler;
 
+	private boolean useTrailingSlashMatch = false;
+
 	private boolean lazyInitHandlers = false;
 
 	private final Map<String, Object> handlerMap = new LinkedHashMap<String, Object>();
@@ -75,6 +76,22 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping {
 	 */
 	public Object getRootHandler() {
 		return this.rootHandler;
+	}
+
+	/**
+	 * Whether to match to URLs irrespective of the presence of a trailing slash.
+	 * If enabled a URL pattern such as "/users" also matches to "/users/".
+	 * <p>The default value is {@code false}.
+	 */
+	public void setUseTrailingSlashMatch(boolean useTrailingSlashMatch) {
+		this.useTrailingSlashMatch = useTrailingSlashMatch;
+	}
+
+	/**
+	 * Whether to match to URLs irrespective of the presence of a trailing slash.
+	 */
+	public boolean useTrailingSlashMatch() {
+		return this.useTrailingSlashMatch;
 	}
 
 	/**
@@ -160,6 +177,11 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping {
 			if (getPathMatcher().match(registeredPattern, urlPath)) {
 				matchingPatterns.add(registeredPattern);
 			}
+			else if (useTrailingSlashMatch()) {
+				if (!registeredPattern.endsWith("/") && getPathMatcher().match(registeredPattern + "/", urlPath)) {
+					matchingPatterns.add(registeredPattern +"/");
+				}
+			}
 		}
 		String bestPatternMatch = null;
 		Comparator<String> patternComparator = getPathMatcher().getPatternComparator(urlPath);
@@ -172,6 +194,10 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping {
 		}
 		if (bestPatternMatch != null) {
 			handler = this.handlerMap.get(bestPatternMatch);
+			if (handler == null) {
+				Assert.isTrue(bestPatternMatch.endsWith("/"));
+				handler = this.handlerMap.get(bestPatternMatch.substring(0, bestPatternMatch.length() - 1));
+			}
 			// Bean name or resolved handler?
 			if (handler instanceof String) {
 				String handlerName = (String) handler;

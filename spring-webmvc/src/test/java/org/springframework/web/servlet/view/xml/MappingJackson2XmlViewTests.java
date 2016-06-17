@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,8 @@ import com.fasterxml.jackson.databind.cfg.SerializerFactoryConfig;
 import com.fasterxml.jackson.databind.ser.BeanSerializerFactory;
 import com.fasterxml.jackson.databind.ser.SerializerFactory;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Mockito.mock;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.ScriptableObject;
@@ -46,6 +44,9 @@ import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.mock.web.test.MockHttpServletResponse;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.View;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Sebastien Deleuze
@@ -89,9 +90,7 @@ public class MappingJackson2XmlViewTests {
 		view.setUpdateContentLength(true);
 		view.render(model, request, response);
 
-		assertEquals("no-cache", response.getHeader("Pragma"));
-		assertEquals("no-cache, no-store, max-age=0", response.getHeader("Cache-Control"));
-		assertNotNull(response.getHeader("Expires"));
+		assertEquals("no-store", response.getHeader("Cache-Control"));
 
 		assertEquals(MappingJackson2XmlView.DEFAULT_CONTENT_TYPE, response.getContentType());
 
@@ -126,9 +125,7 @@ public class MappingJackson2XmlViewTests {
 
 		view.render(model, request, response);
 
-		assertNull(response.getHeader("Pragma"));
 		assertNull(response.getHeader("Cache-Control"));
-		assertNull(response.getHeader("Expires"));
 	}
 
 	@Test

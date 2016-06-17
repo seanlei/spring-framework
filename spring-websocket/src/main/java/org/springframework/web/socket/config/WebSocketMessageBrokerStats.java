@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,21 +16,21 @@
 
 package org.springframework.web.socket.config;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.messaging.simp.stomp.StompBrokerRelayMessageHandler;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.web.socket.messaging.StompSubProtocolHandler;
-import org.springframework.web.socket.messaging.SubProtocolHandler;
-import org.springframework.web.socket.messaging.SubProtocolWebSocketHandler;
-
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.springframework.messaging.simp.stomp.StompBrokerRelayMessageHandler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.web.socket.messaging.StompSubProtocolHandler;
+import org.springframework.web.socket.messaging.SubProtocolHandler;
+import org.springframework.web.socket.messaging.SubProtocolWebSocketHandler;
 
 /**
  * A central class for aggregating information about internal state and counters
@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class WebSocketMessageBrokerStats {
 
-	private static Log logger = LogFactory.getLog(WebSocketMessageBrokerStats.class);
+	private static final Log logger = LogFactory.getLog(WebSocketMessageBrokerStats.class);
 
 
 	private SubProtocolWebSocketHandler webSocketHandler;
@@ -180,8 +180,8 @@ public class WebSocketMessageBrokerStats {
 	}
 
 	private String getExecutorStatsInfo(Executor executor) {
-		String s = executor.toString();
-		return s.substring(s.indexOf("pool"), s.length() - 1);
+		String str = executor.toString();
+		return str.substring(str.indexOf("pool"), str.length() - 1);
 	}
 
 	public String toString() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
 import org.springframework.core.convert.ConversionService;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -114,18 +115,26 @@ public class DelegatingWebMvcConfigurationTests {
 
 	@Test
 	public void configureMessageConverters() {
+		final HttpMessageConverter customConverter = mock(HttpMessageConverter.class);
+		final StringHttpMessageConverter stringConverter = new StringHttpMessageConverter();
 		List<WebMvcConfigurer> configurers = new ArrayList<WebMvcConfigurer>();
 		configurers.add(new WebMvcConfigurerAdapter() {
 			@Override
 			public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-				converters.add(new StringHttpMessageConverter());
+				converters.add(stringConverter);
+			}
+			@Override
+			public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+				converters.add(0, customConverter);
 			}
 		});
 		delegatingConfig = new DelegatingWebMvcConfiguration();
 		delegatingConfig.setConfigurers(configurers);
 
 		RequestMappingHandlerAdapter adapter = delegatingConfig.requestMappingHandlerAdapter();
-		assertEquals("Only one custom converter should be registered", 1, adapter.getMessageConverters().size());
+		assertEquals("Only one custom converter should be registered", 2, adapter.getMessageConverters().size());
+		assertSame(customConverter, adapter.getMessageConverters().get(0));
+		assertSame(stringConverter, adapter.getMessageConverters().get(1));
 	}
 
 	@Test

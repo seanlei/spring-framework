@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,7 +150,7 @@ public class MethodReference extends SpelNodeImpl {
 		for (int i = 0; i < arguments.length; i++) {
 			// Make the root object the active context again for evaluating the parameter expressions
 			try {
-				state.pushActiveContextObject(state.getRootContextObject());
+				state.pushActiveContextObject(state.getScopeRootContextObject());
 				arguments[i] = this.children[i].getValueInternal(state).getValue();
 			}
 			finally {
@@ -268,20 +268,18 @@ public class MethodReference extends SpelNodeImpl {
 		}
 
 		ReflectiveMethodExecutor executor = (ReflectiveMethodExecutor) executorToCheck.get();
-		Method method = executor.getMethod();
-		if (!Modifier.isPublic(method.getModifiers()) || !Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
-			return false;
-		}
-		if (method.isVarArgs()) {
-			return false;
-		}
 		if (executor.didArgumentConversionOccur()) {
+			return false;
+		}
+		Method method = executor.getMethod();
+		Class<?> clazz = method.getDeclaringClass();
+		if (!Modifier.isPublic(clazz.getModifiers()) && executor.getPublicDeclaringClass() == null) {
 			return false;
 		}
 
 		return true;
 	}
-
+	
 	@Override
 	public void generateCode(MethodVisitor mv, CodeFlow cf) {
 		CachedMethodExecutor executorToCheck = this.cachedExecutor;
@@ -289,38 +287,40 @@ public class MethodReference extends SpelNodeImpl {
 			throw new IllegalStateException("No applicable cached executor found: " + executorToCheck);
 		}
 
-		Method method = ((ReflectiveMethodExecutor) executorToCheck.get()).getMethod();
+		ReflectiveMethodExecutor methodExecutor = (ReflectiveMethodExecutor) executorToCheck.get();
+		Method method = methodExecutor.getMethod();
 		boolean isStaticMethod = Modifier.isStatic(method.getModifiers());
 		String descriptor = cf.lastDescriptor();
 
-		if (descriptor == null && !isStaticMethod) {
-			cf.loadTarget(mv);
+		if (descriptor == null) {
+			if (!isStaticMethod) {
+				// Nothing on the stack but something is needed
+				cf.loadTarget(mv);
+			}
+		}
+		else {
+			if (isStaticMethod) {
+				// Something on the stack when nothing is needed
+				mv.visitInsn(POP);
+			}
+		}
+		
+		if (CodeFlow.isPrimitive(descriptor)) {
+			CodeFlow.insertBoxIfNecessary(mv, descriptor.charAt(0));
 		}
 
-		boolean itf = method.getDeclaringClass().isInterface();
-		String methodDeclaringClassSlashedDescriptor = method.getDeclaringClass().getName().replace('.', '/');
+		String classDesc = (Modifier.isPublic(method.getDeclaringClass().getModifiers()) ?
+				method.getDeclaringClass().getName().replace('.', '/') :
+				methodExecutor.getPublicDeclaringClass().getName().replace('.', '/'));
 		if (!isStaticMethod) {
-			if (descriptor == null || !descriptor.equals(methodDeclaringClassSlashedDescriptor)) {
-				mv.visitTypeInsn(CHECKCAST, methodDeclaringClassSlashedDescriptor);
+			if (descriptor == null || !descriptor.substring(1).equals(classDesc)) {
+				CodeFlow.insertCheckCast(mv, "L" + classDesc);
 			}
 		}
-		String[] paramDescriptors = CodeFlow.toParamDescriptors(method);
-		for (int i = 0; i < this.children.length;i++) {
-			SpelNodeImpl child = this.children[i];
-			cf.enterCompilationScope();
-			child.generateCode(mv, cf);
-			// Check if need to box it for the method reference?
-			if (CodeFlow.isPrimitive(cf.lastDescriptor()) && paramDescriptors[i].charAt(0) == 'L') {
-				CodeFlow.insertBoxIfNecessary(mv, cf.lastDescriptor().charAt(0));
-			}
-			else if (!cf.lastDescriptor().equals(paramDescriptors[i])) {
-				// This would be unnecessary in the case of subtyping (e.g. method takes Number but Integer passed in)
-				CodeFlow.insertCheckCast(mv, paramDescriptors[i]);
-			}
-			cf.exitCompilationScope();
-		}
-		mv.visitMethodInsn(isStaticMethod ? INVOKESTATIC : INVOKEVIRTUAL,
-				methodDeclaringClassSlashedDescriptor, method.getName(), CodeFlow.createSignatureDescriptor(method), itf);
+
+		generateCodeForArguments(mv, cf, method, this.children);
+		mv.visitMethodInsn((isStaticMethod ? INVOKESTATIC : INVOKEVIRTUAL), classDesc, method.getName(),
+				CodeFlow.createSignatureDescriptor(method), method.getDeclaringClass().isInterface());
 		cf.pushDescriptor(this.exitTypeDescriptor);
 	}
 
@@ -381,7 +381,7 @@ public class MethodReference extends SpelNodeImpl {
 		}
 
 		public boolean isSuitable(Object value, TypeDescriptor target, List<TypeDescriptor> argumentTypes) {
-			return ((this.staticClass == null || this.staticClass.equals(value)) &&
+			return ((this.staticClass == null || this.staticClass == value) &&
 					this.target.equals(target) && this.argumentTypes.equals(argumentTypes));
 		}
 

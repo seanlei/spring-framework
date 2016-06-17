@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.ServletContext;
 import javax.servlet.jsp.JspFactory;
 
@@ -101,11 +102,16 @@ import org.springframework.web.context.ServletContextAware;
  * The values in the list are the actual Tiles XML files containing the definitions.
  * If the list is not specified, the default is {@code "/WEB-INF/tiles.xml"}.
  *
+ * <p><b>NOTE: Tiles 2 support is deprecated in favor of Tiles 3 and will be removed
+ * as of Spring Framework 5.0.</b>.
+ *
  * @author Juergen Hoeller
  * @since 2.5
  * @see TilesView
  * @see TilesViewResolver
+ * @deprecated as of Spring 4.2, in favor of Tiles 3
  */
+@Deprecated
 public class TilesConfigurer implements ServletContextAware, InitializingBean, DisposableBean {
 
 	private static final boolean tilesElPresent =
@@ -307,7 +313,10 @@ public class TilesConfigurer implements ServletContextAware, InitializingBean, D
 				try {
 					List<URL> result = new LinkedList<URL>();
 					for (String definition : definitions) {
-						result.addAll(applicationContext.getResources(definition));
+						Set<URL> resources = applicationContext.getResources(definition);
+						if (resources != null) {
+							result.addAll(resources);
+						}
 					}
 					return result;
 				}

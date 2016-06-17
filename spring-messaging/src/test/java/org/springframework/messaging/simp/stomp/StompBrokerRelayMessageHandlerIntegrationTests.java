@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,14 +41,16 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.StubMessageChannel;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.broker.BrokerAvailabilityEvent;
 import org.springframework.messaging.simp.SimpMessageType;
+import org.springframework.messaging.simp.broker.BrokerAvailabilityEvent;
 import org.springframework.messaging.support.ExecutorSubscribableChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.SocketUtils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Integration tests for {@link StompBrokerRelayMessageHandler} running against ActiveMQ.
@@ -229,25 +231,6 @@ public class StompBrokerRelayMessageHandlerIntegrationTests {
 	}
 
 	@Test
-	public void disconnectClosesRelaySessionCleanly() throws Exception {
-
-		logger.debug("Starting test disconnectClosesRelaySessionCleanly()");
-
-		MessageExchange connect = MessageExchangeBuilder.connect("sess1").build();
-		this.relay.handleMessage(connect.message);
-		this.responseHandler.expectMessages(connect);
-
-		StompHeaderAccessor headers = StompHeaderAccessor.create(StompCommand.DISCONNECT);
-		headers.setSessionId("sess1");
-		this.relay.handleMessage(MessageBuilder.createMessage(new byte[0], headers.getMessageHeaders()));
-
-		Thread.sleep(2000);
-
-		// Check that we have not received an ERROR as a result of the connection closing
-		assertTrue("Unexpected messages: " + this.responseHandler.queue, this.responseHandler.queue.isEmpty());
-	}
-
-	@Test
 	public void disconnectWithReceipt() throws Exception {
 
 		logger.debug("Starting test disconnectWithReceipt()");
@@ -269,6 +252,11 @@ public class StompBrokerRelayMessageHandlerIntegrationTests {
 
 		@Override
 		public void publishEvent(ApplicationEvent event) {
+			publishEvent((Object) event);
+		}
+
+		@Override
+		public void publishEvent(Object event) {
 			logger.debug("Processing ApplicationEvent " + event);
 			if (event instanceof BrokerAvailabilityEvent) {
 				this.eventQueue.add((BrokerAvailabilityEvent) event);
@@ -338,7 +326,7 @@ public class StompBrokerRelayMessageHandlerIntegrationTests {
 		}
 
 		public boolean matchMessage(Message<?> message) {
-			for (int i=0 ; i < this.expected.length; i++) {
+			for (int i = 0 ; i < this.expected.length; i++) {
 				if (this.expected[i].match(message)) {
 					this.actual[i] = message;
 					return true;

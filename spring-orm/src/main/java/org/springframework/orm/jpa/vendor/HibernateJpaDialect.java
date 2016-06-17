@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.sql.SQLException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.logging.LogFactory;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.NonUniqueObjectException;
@@ -65,23 +66,30 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.InvalidIsolationLevelException;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
  * {@link org.springframework.orm.jpa.JpaDialect} implementation for
- * Hibernate EntityManager. Developed against Hibernate 3.6 and 4.2/4.3.
+ * Hibernate EntityManager. Developed and tested against Hibernate 3.6,
+ * 4.2/4.3 as well as 5.0/5.1/5.2.
  *
  * @author Juergen Hoeller
  * @author Costin Leau
  * @since 2.0
+ * @see HibernateJpaVendorAdapter
+ * @see org.hibernate.Session#setFlushMode
+ * @see org.hibernate.Transaction#setTimeout
  */
-@SuppressWarnings({"serial", "deprecation"})
+@SuppressWarnings("serial")
 public class HibernateJpaDialect extends DefaultJpaDialect {
 
 	private static Class<?> optimisticLockExceptionClass;
 
 	private static Class<?> pessimisticLockExceptionClass;
+
+	private static Method getFlushMode;
 
 	static {
 		// Checking for Hibernate 4.x's Optimistic/PessimisticEntityLockException
@@ -99,6 +107,22 @@ public class HibernateJpaDialect extends DefaultJpaDialect {
 		catch (ClassNotFoundException ex) {
 			pessimisticLockExceptionClass = null;
 		}
+
+		try {
+			// Hibernate 5.2+ getHibernateFlushMode()
+			getFlushMode = Session.class.getMethod("getHibernateFlushMode");
+		}
+		catch (NoSuchMethodException ex) {
+			try {
+				// Classic Hibernate getFlushMode() with FlushMode return type
+				getFlushMode = Session.class.getMethod("getFlushMode");
+			}
+			catch (NoSuchMethodException ex2) {
+				throw new IllegalStateException("No compatible Hibernate getFlushMode signature found", ex2);
+			}
+		}
+		// Check that it is the Hibernate FlushMode type, not JPA's...
+		Assert.state(FlushMode.class == getFlushMode.getReturnType());
 	}
 
 
@@ -119,6 +143,13 @@ public class HibernateJpaDialect extends DefaultJpaDialect {
 	 * {@code Connection.setReadOnly(true)} for read-only transactions anymore either.
 	 * If this flag is turned off, no cleanup of a JDBC Connection is required after
 	 * a transaction, since no Connection settings will get modified.
+	 * <p><b>NOTE:</b> The default behavior in terms of read-only handling changed
+	 * in Spring 4.1, propagating the read-only status to the JDBC Connection now,
+	 * analogous to other Spring transaction managers. This may have the effect
+	 * that you're running into read-only enforcement now where previously write
+	 * access has accidentally been tolerated: Please revise your transaction
+	 * declarations accordingly, removing invalid read-only markers if necessary.
+	 * @since 4.1
 	 * @see java.sql.Connection#setTransactionIsolation
 	 * @see java.sql.Connection#setReadOnly
 	 */
@@ -139,13 +170,12 @@ public class HibernateJpaDialect extends DefaultJpaDialect {
 
 		boolean isolationLevelNeeded = (definition.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT);
 		Integer previousIsolationLevel = null;
-		boolean resetConnection = false;
+		Connection preparedCon = null;
 
 		if (isolationLevelNeeded || definition.isReadOnly()) {
 			if (this.prepareConnection) {
-				Connection con = HibernateConnectionHandle.doGetConnection(session);
-				previousIsolationLevel = DataSourceUtils.prepareConnectionForTransaction(con, definition);
-				resetConnection = true;
+				preparedCon = HibernateConnectionHandle.doGetConnection(session);
+				previousIsolationLevel = DataSourceUtils.prepareConnectionForTransaction(preparedCon, definition);
 			}
 			else if (isolationLevelNeeded) {
 				throw new InvalidIsolationLevelException(getClass().getSimpleName() +
@@ -160,7 +190,7 @@ public class HibernateJpaDialect extends DefaultJpaDialect {
 
 		// Adapt flush mode and store previous isolation level, if any.
 		FlushMode previousFlushMode = prepareFlushMode(session, definition.isReadOnly());
-		return new SessionTransactionData(session, previousFlushMode, resetConnection, previousIsolationLevel);
+		return new SessionTransactionData(session, previousFlushMode, preparedCon, previousIsolationLevel);
 	}
 
 	@Override
@@ -169,11 +199,11 @@ public class HibernateJpaDialect extends DefaultJpaDialect {
 
 		Session session = getSession(entityManager);
 		FlushMode previousFlushMode = prepareFlushMode(session, readOnly);
-		return new SessionTransactionData(session, previousFlushMode, false, null);
+		return new SessionTransactionData(session, previousFlushMode, null, null);
 	}
 
 	protected FlushMode prepareFlushMode(Session session, boolean readOnly) throws PersistenceException {
-		FlushMode flushMode = session.getFlushMode();
+		FlushMode flushMode = (FlushMode) ReflectionUtils.invokeMethod(getFlushMode, session);
 		if (readOnly) {
 			// We should suppress flushing for a read-only transaction.
 			if (!flushMode.equals(FlushMode.MANUAL)) {
@@ -314,15 +344,15 @@ public class HibernateJpaDialect extends DefaultJpaDialect {
 
 		private final FlushMode previousFlushMode;
 
-		private final boolean resetConnection;
+		private final Connection preparedCon;
 
 		private final Integer previousIsolationLevel;
 
 		public SessionTransactionData(
-				Session session, FlushMode previousFlushMode, boolean resetConnection, Integer previousIsolationLevel) {
+				Session session, FlushMode previousFlushMode, Connection preparedCon, Integer previousIsolationLevel) {
 			this.session = session;
 			this.previousFlushMode = previousFlushMode;
-			this.resetConnection = resetConnection;
+			this.preparedCon = preparedCon;
 			this.previousIsolationLevel = previousIsolationLevel;
 		}
 
@@ -330,9 +360,15 @@ public class HibernateJpaDialect extends DefaultJpaDialect {
 			if (this.previousFlushMode != null) {
 				this.session.setFlushMode(this.previousFlushMode);
 			}
-			if (this.resetConnection && this.session.isConnected()) {
-				Connection con = HibernateConnectionHandle.doGetConnection(this.session);
-				DataSourceUtils.resetConnectionAfterTransaction(con, this.previousIsolationLevel);
+			if (this.preparedCon != null && this.session.isConnected()) {
+				Connection conToReset = HibernateConnectionHandle.doGetConnection(this.session);
+				if (conToReset != this.preparedCon) {
+					LogFactory.getLog(HibernateJpaDialect.class).warn(
+							"JDBC Connection to reset not identical to originally prepared Connection - please " +
+							"make sure to use connection release mode ON_CLOSE (the default) and to run against " +
+							"Hibernate 4.2+ (or switch HibernateJpaDialect's prepareConnection flag to false");
+				}
+				DataSourceUtils.resetConnectionAfterTransaction(conToReset, this.previousIsolationLevel);
 			}
 		}
 	}
@@ -340,13 +376,13 @@ public class HibernateJpaDialect extends DefaultJpaDialect {
 
 	private static class HibernateConnectionHandle implements ConnectionHandle {
 
-		private final Session session;
-
 		// This will find a corresponding method on Hibernate 3.x but not on 4.x
 		private static final Method sessionConnectionMethod =
 				ClassUtils.getMethodIfAvailable(Session.class, "connection");
 
 		private static volatile Method connectionMethodToUse = sessionConnectionMethod;
+
+		private final Session session;
 
 		public HibernateConnectionHandle(Session session) {
 			this.session = session;
@@ -372,7 +408,7 @@ public class HibernateJpaDialect extends DefaultJpaDialect {
 		public static Connection doGetConnection(Session session) {
 			try {
 				if (connectionMethodToUse == null) {
-					// Reflective lookup trying to find SessionImpl's connection() on Hibernate 4.x
+					// Reflective lookup to find SessionImpl's connection() method on Hibernate 4.x
 					connectionMethodToUse = session.getClass().getMethod("connection");
 				}
 				return (Connection) ReflectionUtils.invokeMethod(connectionMethodToUse, session);

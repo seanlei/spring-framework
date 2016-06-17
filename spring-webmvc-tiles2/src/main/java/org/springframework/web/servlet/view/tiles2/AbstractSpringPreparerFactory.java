@@ -20,20 +20,26 @@ import org.apache.tiles.TilesException;
 import org.apache.tiles.context.TilesRequestContext;
 import org.apache.tiles.preparer.PreparerFactory;
 import org.apache.tiles.preparer.ViewPreparer;
+
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
- * Abstract implementation of the Tiles2 {@link org.apache.tiles.preparer.PreparerFactory}
+ * Abstract implementation of the Tiles {@link org.apache.tiles.preparer.PreparerFactory}
  * interface, obtaining the current Spring WebApplicationContext and delegating to
  * {@link #getPreparer(String, org.springframework.web.context.WebApplicationContext)}.
+ *
+ * <p><b>NOTE: Tiles 2 support is deprecated in favor of Tiles 3 and will be removed
+ * as of Spring Framework 5.0.</b>.
  *
  * @author Juergen Hoeller
  * @since 2.5
  * @see #getPreparer(String, org.springframework.web.context.WebApplicationContext)
  * @see SimpleSpringPreparerFactory
  * @see SpringBeanPreparerFactory
+ * @deprecated as of Spring 4.2, in favor of Tiles 3
  */
+@Deprecated
 public abstract class AbstractSpringPreparerFactory implements PreparerFactory {
 
 	@Override

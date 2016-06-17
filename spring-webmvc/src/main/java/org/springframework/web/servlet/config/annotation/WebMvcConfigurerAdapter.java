@@ -53,6 +53,14 @@ public abstract class WebMvcConfigurerAdapter implements WebMvcConfigurer {
 
 	/**
 	 * {@inheritDoc}
+	 * <p>This implementation is empty.
+	 */
+	@Override
+	public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+	}
+
+	/**
+	 * {@inheritDoc}
 	 * <p>This implementation returns {@code null}
 	 */
 	@Override
@@ -113,6 +121,14 @@ public abstract class WebMvcConfigurerAdapter implements WebMvcConfigurer {
 	 * <p>This implementation is empty.
 	 */
 	@Override
+	public void extendHandlerExceptionResolvers(List<HandlerExceptionResolver> exceptionResolvers) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>This implementation is empty.
+	 */
+	@Override
 	public MessageCodesResolver getMessageCodesResolver() {
 		return null;
 	}
@@ -155,6 +171,14 @@ public abstract class WebMvcConfigurerAdapter implements WebMvcConfigurer {
 	 */
 	@Override
 	public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>This implementation is empty.
+	 */
+	@Override
+	public void addCorsMappings(CorsRegistry registry) {
 	}
 
 }

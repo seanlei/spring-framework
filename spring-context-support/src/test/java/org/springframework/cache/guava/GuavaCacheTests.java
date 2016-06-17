@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package org.springframework.cache.guava;
 
-import static org.junit.Assert.*;
-
 import com.google.common.cache.CacheBuilder;
 import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.cache.AbstractCacheTests;
 import org.springframework.cache.Cache;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Stephane Nicoll
@@ -64,4 +64,5 @@ public class GuavaCacheTests extends AbstractCacheTests<GuavaCache> {
 		assertEquals(null, wrapper.get());
 		assertEquals(value, cache.get(key).get()); // not changed
 	}
+
 }

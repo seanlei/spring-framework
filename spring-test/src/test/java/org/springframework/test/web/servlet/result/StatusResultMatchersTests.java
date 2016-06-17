@@ -16,14 +16,13 @@
 
 package org.springframework.test.web.servlet.result;
 
-import static org.junit.Assert.fail;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import org.springframework.core.Conventions;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -33,6 +32,8 @@ import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.StubMvcResult;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for {@link StatusResultMatchers}.
@@ -58,7 +59,7 @@ public class StatusResultMatchersTests {
 
 		List<AssertionError> failures = new ArrayList<AssertionError>();
 
-		for(HttpStatus status : HttpStatus.values()) {
+		for (HttpStatus status : HttpStatus.values()) {
 			MockHttpServletResponse response = new MockHttpServletResponse();
 			response.setStatus(status.value());
 			MvcResult mvcResult = new StubMvcResult(request, null, null, null, null, null, response);
@@ -90,9 +91,7 @@ public class StatusResultMatchersTests {
 
 	@Test
 	public void statusRanges() throws Exception {
-
-		for(HttpStatus status : HttpStatus.values()) {
-
+		for (HttpStatus status : HttpStatus.values()) {
 			MockHttpServletResponse response = new MockHttpServletResponse();
 			response.setStatus(status.value());
 			MvcResult mvcResult = new StubMvcResult(request, null, null, null, null, null, response);

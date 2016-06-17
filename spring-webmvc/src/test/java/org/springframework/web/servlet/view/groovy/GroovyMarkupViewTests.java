@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,12 @@
  */
 package org.springframework.web.servlet.view.groovy;
 
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.mock;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
 import javax.servlet.ServletContext;
 
 import groovy.text.Template;
@@ -47,6 +42,9 @@ import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.mock.web.test.MockHttpServletResponse;
 import org.springframework.mock.web.test.MockServletContext;
 import org.springframework.web.context.WebApplicationContext;
+
+import static org.junit.Assert.*;
+import static org.mockito.BDDMockito.*;
 
 /**
  * @author Brian Clozel

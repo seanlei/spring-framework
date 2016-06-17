@@ -23,10 +23,11 @@ import org.apache.tiles.TilesException;
 import org.apache.tiles.preparer.PreparerException;
 import org.apache.tiles.preparer.ViewPreparer;
 import org.apache.tiles.preparer.factory.NoSuchPreparerException;
+
 import org.springframework.web.context.WebApplicationContext;
 
 /**
- * Tiles3 {@link org.apache.tiles.preparer.PreparerFactory} implementation
+ * Tiles {@link org.apache.tiles.preparer.PreparerFactory} implementation
  * that expects preparer class names and builds preparer instances for those,
  * creating them through the Spring ApplicationContext in order to apply
  * Spring container callbacks and configured Spring BeanPostProcessors.

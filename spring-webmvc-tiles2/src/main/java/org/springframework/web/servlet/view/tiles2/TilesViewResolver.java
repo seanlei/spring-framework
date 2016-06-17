@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2009 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.web.servlet.view.tiles2;
 
+import org.springframework.web.servlet.view.AbstractUrlBasedView;
 import org.springframework.web.servlet.view.UrlBasedViewResolver;
 
 /**
@@ -29,26 +30,57 @@ import org.springframework.web.servlet.view.UrlBasedViewResolver;
  * check for the existence of the specified template resources and only return
  * a non-null View object if the template was actually found.
  *
+ * <p><b>NOTE: Tiles 2 support is deprecated in favor of Tiles 3 and will be removed
+ * as of Spring Framework 5.0.</b>.
+ *
  * @author Juergen Hoeller
+ * @author Sebastien Deleuze
  * @since 3.0
  * @see #setViewClass
  * @see #setPrefix
  * @see #setSuffix
  * @see #setRequestContextAttribute
  * @see TilesView
+ * @deprecated as of Spring 4.2, in favor of Tiles 3
  */
+@Deprecated
 public class TilesViewResolver extends UrlBasedViewResolver {
+
+	private Boolean alwaysInclude;
+
 
 	public TilesViewResolver() {
 		setViewClass(requiredViewClass());
 	}
 
+
 	/**
-	 * Requires {@link TilesView}.
+	 * This resolver requires {@link TilesView}.
 	 */
 	@Override
 	protected Class<?> requiredViewClass() {
 		return TilesView.class;
+	}
+
+	/**
+	 * Specify whether to always include the view rather than forward to it.
+	 * <p>Default is "false". Switch this flag on to enforce the use of a
+	 * Servlet include, even if a forward would be possible.
+	 * @since 4.1.2
+	 * @see TilesView#setAlwaysInclude
+	 */
+	public void setAlwaysInclude(Boolean alwaysInclude) {
+		this.alwaysInclude = alwaysInclude;
+	}
+
+
+	@Override
+	protected AbstractUrlBasedView buildView(String viewName) throws Exception {
+		TilesView view = (TilesView) super.buildView(viewName);
+		if (this.alwaysInclude != null) {
+			view.setAlwaysInclude(this.alwaysInclude);
+		}
+		return view;
 	}
 
 }

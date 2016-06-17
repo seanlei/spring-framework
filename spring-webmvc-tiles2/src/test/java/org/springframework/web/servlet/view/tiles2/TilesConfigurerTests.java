@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,21 @@ import org.apache.tiles.context.TilesRequestContext;
 import org.apache.tiles.impl.BasicTilesContainer;
 import org.apache.tiles.servlet.context.ServletTilesRequestContext;
 import org.apache.tiles.servlet.context.ServletUtil;
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.mock.web.test.MockHttpServletResponse;
 import org.springframework.mock.web.test.MockServletContext;
 
+import static org.junit.Assert.*;
+
 /**
  * @author Juergen Hoeller
- * */
+ */
 public class TilesConfigurerTests {
 
 	@Test
+	@SuppressWarnings("deprecation")
 	public void simpleBootstrap() {
 		MockServletContext sc = new MockServletContext();
 		TilesConfigurer tc = new TilesConfigurer();

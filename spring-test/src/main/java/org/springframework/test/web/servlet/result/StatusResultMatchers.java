@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.test.web.servlet.result;
 
-import static org.springframework.test.util.AssertionErrors.assertEquals;
-import static org.springframework.test.util.MatcherAssertionErrors.assertThat;
-
 import org.hamcrest.Matcher;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
 
+import static org.hamcrest.MatcherAssert.*;
+import static org.springframework.test.util.AssertionErrors.*;
+
 /**
- * Factory for assertions on the response status. An instance of this class is
- * typically accessed via {@link MockMvcResultMatchers#status()}.
+ * Factory for assertions on the response status.
+ * <p>An instance of this class is typically accessed via
+ * {@link MockMvcResultMatchers#status}.
  *
  * @author Keesun Baik
  * @author Rossen Stoyanchev
  * @author Sebastien Deleuze
+ * @author Brian Clozel
  * @since 3.2
  */
 public class StatusResultMatchers {
-
 
 	/**
 	 * Protected constructor.
@@ -41,6 +44,7 @@ public class StatusResultMatchers {
 	 */
 	protected StatusResultMatchers() {
 	}
+
 
 	/**
 	 * Assert the response status code with the given Hamcrest {@link Matcher}.
@@ -556,6 +560,14 @@ public class StatusResultMatchers {
 	 */
 	public ResultMatcher isRequestHeaderFieldsTooLarge() {
 		return matcher(HttpStatus.valueOf(431));
+	}
+
+	/**
+	 * Assert the response status code is {@code HttpStatus.UNAVAILABLE_FOR_LEGAL_REASONS} (451).
+	 * @since 4.3
+	 */
+	public ResultMatcher isUnavailableForLegalReasons() {
+		return matcher(HttpStatus.valueOf(451));
 	}
 
 	/**

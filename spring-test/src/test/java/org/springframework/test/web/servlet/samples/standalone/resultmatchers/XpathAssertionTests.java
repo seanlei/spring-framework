@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -29,6 +28,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.test.web.Person;
@@ -158,7 +158,7 @@ public class XpathAssertionTests {
 		standaloneSetup(new BlogFeedController()).build()
 			.perform(get("/blog.atom").accept(MediaType.APPLICATION_ATOM_XML))
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(MediaType.APPLICATION_ATOM_XML))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_ATOM_XML))
 				.andExpect(xpath("//feed/title").string("Test Feed"))
 				.andExpect(xpath("//feed/icon").string("http://www.example.com/favicon.ico"));
 	}
