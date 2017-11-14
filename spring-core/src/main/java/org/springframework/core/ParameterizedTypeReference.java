@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,10 +47,14 @@ public abstract class ParameterizedTypeReference<T> {
 	protected ParameterizedTypeReference() {
 		Class<?> parameterizedTypeReferenceSubclass = findParameterizedTypeReferenceSubclass(getClass());
 		Type type = parameterizedTypeReferenceSubclass.getGenericSuperclass();
-		Assert.isInstanceOf(ParameterizedType.class, type);
+		Assert.isInstanceOf(ParameterizedType.class, type, "Type must be a parameterized type");
 		ParameterizedType parameterizedType = (ParameterizedType) type;
-		Assert.isTrue(parameterizedType.getActualTypeArguments().length == 1);
+		Assert.isTrue(parameterizedType.getActualTypeArguments().length == 1, "Number of type arguments must be 1");
 		this.type = parameterizedType.getActualTypeArguments()[0];
+	}
+
+	private ParameterizedTypeReference(Type type) {
+		this.type = type;
 	}
 
 
@@ -74,6 +78,19 @@ public abstract class ParameterizedTypeReference<T> {
 		return "ParameterizedTypeReference<" + this.type + ">";
 	}
 
+
+	/**
+	 * Build a {@code ParameterizedTypeReference} wrapping the given type.
+	 * @param type a generic type (possibly obtained via reflection,
+	 * e.g. from {@link java.lang.reflect.Method#getGenericReturnType()})
+	 * @return a corresponding reference which may be passed into
+	 * {@code ParameterizedTypeReference}-accepting methods
+	 * @since 4.3.12
+	 */
+	public static <T> ParameterizedTypeReference<T> forType(Type type) {
+		return new ParameterizedTypeReference<T>(type) {
+		};
+	}
 
 	private static Class<?> findParameterizedTypeReferenceSubclass(Class<?> child) {
 		Class<?> parent = child.getSuperclass();

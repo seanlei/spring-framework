@@ -35,13 +35,202 @@ import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.util.UriUtils;
 
 /**
- * Databinding-aware JSP tag for rendering an HTML '{@code form}' whose
- * inner elements are bound to properties on a <em>form object</em>.
+ * The {@code <form>} tag renders an HTML 'form' tag and exposes a binding path to
+ * inner tags for binding.
  *
  * <p>Users should place the form object into the
  * {@link org.springframework.web.servlet.ModelAndView ModelAndView} when
  * populating the data for their view. The name of this form object can be
  * configured using the {@link #setModelAttribute "modelAttribute"} property.
+ *
+ * <p>
+ * <table>
+ * <caption>Attribute Summary</caption>
+ * <thead>
+ * <tr>
+ * <th class="colFirst">Attribute</th>
+ * <th class="colOne">Required?</th>
+ * <th class="colOne">Runtime Expression?</th>
+ * <th class="colLast">Description</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr class="altColor">
+ * <td><p>acceptCharset</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p><p>Specifies the list of character encodings for input data that is accepted
+ * by the server processing this form. The value is a space- and/or comma-delimited
+ * list of charset values. The client must interpret this list as an exclusive-or
+ * list, i.e., the server is able to accept any single character encoding per
+ * entity received.</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>action</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p><p>HTML Required Attribute</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>cssClass</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Optional Attribute</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>cssStyle</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Optional Attribute</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>dir</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Standard Attribute</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>enctype</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Optional Attribute</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>htmlEscape</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>Enable/disable HTML escaping of rendered values.</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>id</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Standard Attribute</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>lang</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Standard Attribute</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>method</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Optional Attribute</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>methodParam</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>The parameter name used for HTTP methods other then GET and POST.
+ * Default is '_method'.</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>modelAttribute</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>Name of the model attribute under which the form object is exposed.
+ * Defaults to 'command'.</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>name</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Standard Attribute - added for backwards compatibility cases</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>onclick</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>ondblclick</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>onkeydown</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>onkeypress</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>onkeyup</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>onmousedown</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>onmousemove</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>onmouseout</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>onmouseover</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>onmouseup</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>onreset</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>onsubmit</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Event Attribute</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>servletRelativeAction</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>Action reference to be appended to the current servlet path</p></td>
+ * </tr>
+ * <tr class="altColor">
+ * <td><p>target</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Optional Attribute</p></td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td><p>title</p></td>
+ * <td><p>false</p></td>
+ * <td><p>true</p></td>
+ * <td><p>HTML Standard Attribute</p></td>
+ * </tr>
+ * </tbody>
+ * </table>
  *
  * @author Rob Harrop
  * @author Juergen Hoeller
@@ -140,27 +329,6 @@ public class FormTag extends AbstractHtmlElementTag {
 	 * Get the name of the form attribute in the model.
 	 */
 	protected String getModelAttribute() {
-		return this.modelAttribute;
-	}
-
-	/**
-	 * Set the name of the form attribute in the model.
-	 * <p>May be a runtime expression.
-	 * @see #setModelAttribute
-	 * @deprecated as of Spring 4.3, in favor of {@link #setModelAttribute}
-	 */
-	@Deprecated
-	public void setCommandName(String commandName) {
-		this.modelAttribute = commandName;
-	}
-
-	/**
-	 * Get the name of the form attribute in the model.
-	 * @see #getModelAttribute
-	 * @deprecated as of Spring 4.3, in favor of {@link #getModelAttribute}
-	 */
-	@Deprecated
-	protected String getCommandName() {
 		return this.modelAttribute;
 	}
 
@@ -331,18 +499,7 @@ public class FormTag extends AbstractHtmlElementTag {
 	 * Get the name of the request param for non-browser supported HTTP methods.
 	 * @since 4.2.3
 	 */
-	@SuppressWarnings("deprecation")
 	protected String getMethodParam() {
-		return getMethodParameter();
-	}
-
-	/**
-	 * Get the name of the request param for non-browser supported HTTP methods.
-	 * @deprecated as of 4.2.3, in favor of {@link #getMethodParam()} which is
-	 * a proper pairing for {@link #setMethodParam(String)}
-	 */
-	@Deprecated
-	protected String getMethodParameter() {
 		return this.methodParam;
 	}
 

@@ -55,9 +55,9 @@ public class BatchSqlUpdate extends SqlUpdate {
 
 	private boolean trackRowsAffected = true;
 
-	private final LinkedList<Object[]> parameterQueue = new LinkedList<Object[]>();
+	private final LinkedList<Object[]> parameterQueue = new LinkedList<>();
 
-	private final List<Integer> rowsAffected = new ArrayList<Integer>();
+	private final List<Integer> rowsAffected = new ArrayList<>();
 
 
 	/**
@@ -182,7 +182,7 @@ public class BatchSqlUpdate extends SqlUpdate {
 		}
 
 		int[] rowsAffected = getJdbcTemplate().batchUpdate(
-				getSql(),
+				resolveSql(),
 				new BatchPreparedStatementSetter() {
 					@Override
 					public int getBatchSize() {

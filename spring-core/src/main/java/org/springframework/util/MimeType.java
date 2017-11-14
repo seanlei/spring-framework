@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
+
+import org.springframework.lang.Nullable;
 
 /**
  * Represents a MIME Type, as originally defined in RFC 2046 and subsequently used in
@@ -120,7 +122,7 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 	 * @throws IllegalArgumentException if any of the parameters contains illegal characters
 	 */
 	public MimeType(String type, String subtype) {
-		this(type, subtype, Collections.<String, String>emptyMap());
+		this(type, subtype, Collections.emptyMap());
 	}
 
 	/**
@@ -153,7 +155,7 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 	 * @param parameters the parameters, may be {@code null}
 	 * @throws IllegalArgumentException if any of the parameters contains illegal characters
 	 */
-	public MimeType(MimeType other, Map<String, String> parameters) {
+	public MimeType(MimeType other, @Nullable Map<String, String> parameters) {
 		this(other.getType(), other.getSubtype(), parameters);
 	}
 
@@ -164,21 +166,19 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 	 * @param parameters the parameters, may be {@code null}
 	 * @throws IllegalArgumentException if any of the parameters contains illegal characters
 	 */
-	public MimeType(String type, String subtype, Map<String, String> parameters) {
-		Assert.hasLength(type, "type must not be empty");
-		Assert.hasLength(subtype, "subtype must not be empty");
+	public MimeType(String type, String subtype, @Nullable Map<String, String> parameters) {
+		Assert.hasLength(type, "'type' must not be empty");
+		Assert.hasLength(subtype, "'subtype' must not be empty");
 		checkToken(type);
 		checkToken(subtype);
 		this.type = type.toLowerCase(Locale.ENGLISH);
 		this.subtype = subtype.toLowerCase(Locale.ENGLISH);
 		if (!CollectionUtils.isEmpty(parameters)) {
-			Map<String, String> map = new LinkedCaseInsensitiveMap<String>(parameters.size(), Locale.ENGLISH);
-			for (Map.Entry<String, String> entry : parameters.entrySet()) {
-				String attribute = entry.getKey();
-				String value = entry.getValue();
+			Map<String, String> map = new LinkedCaseInsensitiveMap<>(parameters.size(), Locale.ENGLISH);
+			parameters.forEach((attribute, value) -> {
 				checkParameters(attribute, value);
 				map.put(attribute, value);
-			}
+			});
 			this.parameters = Collections.unmodifiableMap(map);
 		}
 		else {
@@ -202,8 +202,8 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 	}
 
 	protected void checkParameters(String attribute, String value) {
-		Assert.hasLength(attribute, "parameter attribute must not be empty");
-		Assert.hasLength(value, "parameter value must not be empty");
+		Assert.hasLength(attribute, "'attribute' must not be empty");
+		Assert.hasLength(value, "'value' must not be empty");
 		checkToken(attribute);
 		if (PARAM_CHARSET.equals(attribute)) {
 			value = unquote(value);
@@ -224,10 +224,7 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 	}
 
 	protected String unquote(String s) {
-		if (s == null) {
-			return null;
-		}
-		return isQuotedString(s) ? s.substring(1, s.length() - 1) : s;
+		return (isQuotedString(s) ? s.substring(1, s.length() - 1) : s);
 	}
 
 	/**
@@ -276,20 +273,10 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 	 * @return the character set, or {@code null} if not available
 	 * @since 4.3
 	 */
+	@Nullable
 	public Charset getCharset() {
-		String charSet = getParameter(PARAM_CHARSET);
-		return (charSet != null ? Charset.forName(unquote(charSet)) : null);
-	}
-
-	/**
-	 * Return the character set, as indicated by a {@code charset} parameter, if any.
-	 * @return the character set, or {@code null} if not available
-	 * @deprecated as of Spring 4.3, in favor of {@link #getCharset()} with its name
-	 * aligned with the Java return type name
-	 */
-	@Deprecated
-	public Charset getCharSet() {
-		return getCharset();
+		String charset = getParameter(PARAM_CHARSET);
+		return (charset != null ? Charset.forName(unquote(charset)) : null);
 	}
 
 	/**
@@ -297,6 +284,7 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 	 * @param name the parameter name
 	 * @return the parameter value, or {@code null} if not present
 	 */
+	@Nullable
 	public String getParameter(String name) {
 		return this.parameters.get(name);
 	}
@@ -318,7 +306,7 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 	 * @return {@code true} if this media type includes the given media type;
 	 * {@code false} otherwise
 	 */
-	public boolean includes(MimeType other) {
+	public boolean includes(@Nullable MimeType other) {
 		if (other == null) {
 			return false;
 		}
@@ -332,13 +320,13 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 			}
 			if (this.isWildcardSubtype()) {
 				// wildcard with suffix, e.g. application/*+xml
-				int thisPlusIdx = getSubtype().indexOf('+');
+				int thisPlusIdx = getSubtype().lastIndexOf('+');
 				if (thisPlusIdx == -1) {
 					return true;
 				}
 				else {
 					// application/*+xml includes application/soap+xml
-					int otherPlusIdx = other.getSubtype().indexOf('+');
+					int otherPlusIdx = other.getSubtype().lastIndexOf('+');
 					if (otherPlusIdx != -1) {
 						String thisSubtypeNoSuffix = getSubtype().substring(0, thisPlusIdx);
 						String thisSubtypeSuffix = getSubtype().substring(thisPlusIdx + 1);
@@ -362,7 +350,7 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 	 * @return {@code true} if this media type is compatible with the given media type;
 	 * {@code false} otherwise
 	 */
-	public boolean isCompatibleWith(MimeType other) {
+	public boolean isCompatibleWith(@Nullable MimeType other) {
 		if (other == null) {
 			return false;
 		}
@@ -376,8 +364,8 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 			// wildcard with suffix? e.g. application/*+xml
 			if (this.isWildcardSubtype() || other.isWildcardSubtype()) {
 
-				int thisPlusIdx = getSubtype().indexOf('+');
-				int otherPlusIdx = other.getSubtype().indexOf('+');
+				int thisPlusIdx = getSubtype().lastIndexOf('+');
+				int otherPlusIdx = other.getSubtype().lastIndexOf('+');
 
 				if (thisPlusIdx == -1 && otherPlusIdx == -1) {
 					return true;
@@ -466,12 +454,12 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 	}
 
 	private void appendTo(Map<String, String> map, StringBuilder builder) {
-		for (Map.Entry<String, String> entry : map.entrySet()) {
+		map.forEach((key, val) -> {
 			builder.append(';');
-			builder.append(entry.getKey());
+			builder.append(key);
 			builder.append('=');
-			builder.append(entry.getValue());
-		}
+			builder.append(val);
+		});
 	}
 
 	/**
@@ -493,9 +481,9 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 		if (comp != 0) {
 			return comp;
 		}
-		TreeSet<String> thisAttributes = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+		TreeSet<String> thisAttributes = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 		thisAttributes.addAll(getParameters().keySet());
-		TreeSet<String> otherAttributes = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+		TreeSet<String> otherAttributes = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 		otherAttributes.addAll(other.getParameters().keySet());
 		Iterator<String> thisAttributesIterator = thisAttributes.iterator();
 		Iterator<String> otherAttributesIterator = otherAttributes.iterator();
@@ -531,7 +519,7 @@ public class MimeType implements Comparable<MimeType>, Serializable {
 	}
 
 	private static Map<String, String> addCharsetParameter(Charset charset, Map<String, String> parameters) {
-		Map<String, String> map = new LinkedHashMap<String, String>(parameters);
+		Map<String, String> map = new LinkedHashMap<>(parameters);
 		map.put(PARAM_CHARSET, charset.name());
 		return map;
 	}

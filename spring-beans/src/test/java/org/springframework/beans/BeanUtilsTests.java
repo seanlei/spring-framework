@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import static org.junit.Assert.*;
  * @author Chris Beams
  * @since 19.05.2003
  */
-public final class BeanUtilsTests {
+public class BeanUtilsTests {
 
 	@Test
 	public void testInstantiateClass() {
@@ -442,6 +442,19 @@ public final class BeanUtilsTests {
 		@Override
 		public void setValue(String aValue) {
 			value = aValue;
+		}
+	}
+	
+	private static class BeanWithSingleNonDefaultConstructor {
+		
+		private final String name;
+
+		public BeanWithSingleNonDefaultConstructor(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
 		}
 	}
 

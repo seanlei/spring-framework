@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.springframework.http.client.ClientHttpRequest;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -35,8 +36,9 @@ public class DefaultRequestExpectation implements RequestExpectation {
 
 	private final RequestCount requestCount;
 
-	private final List<RequestMatcher> requestMatchers = new LinkedList<RequestMatcher>();
+	private final List<RequestMatcher> requestMatchers = new LinkedList<>();
 
+	@Nullable
 	private ResponseCreator responseCreator;
 
 
@@ -46,8 +48,8 @@ public class DefaultRequestExpectation implements RequestExpectation {
 	 * @param expectedCount the expected request expectedCount
 	 */
 	public DefaultRequestExpectation(ExpectedCount expectedCount, RequestMatcher requestMatcher) {
-		Assert.notNull(expectedCount, "'expectedCount' is required");
-		Assert.notNull(requestMatcher, "'requestMatcher' is required");
+		Assert.notNull(expectedCount, "ExpectedCount is required");
+		Assert.notNull(requestMatcher, "RequestMatcher is required");
 		this.requestCount = new RequestCount(expectedCount);
 		this.requestMatchers.add(requestMatcher);
 	}
@@ -61,6 +63,7 @@ public class DefaultRequestExpectation implements RequestExpectation {
 		return this.requestMatchers;
 	}
 
+	@Nullable
 	protected ResponseCreator getResponseCreator() {
 		return this.responseCreator;
 	}
@@ -86,11 +89,9 @@ public class DefaultRequestExpectation implements RequestExpectation {
 	}
 
 	@Override
-	public ClientHttpResponse createResponse(ClientHttpRequest request) throws IOException {
+	public ClientHttpResponse createResponse(@Nullable ClientHttpRequest request) throws IOException {
 		ResponseCreator responseCreator = getResponseCreator();
-		if (responseCreator == null) {
-			throw new IllegalStateException("createResponse called before ResponseCreator was set");
-		}
+		Assert.state(responseCreator != null, "createResponse() called before ResponseCreator was set");
 		getRequestCount().incrementAndValidate();
 		return responseCreator.createResponse(request);
 	}
@@ -139,6 +140,7 @@ public class DefaultRequestExpectation implements RequestExpectation {
 		}
 
 		public boolean isSatisfied() {
+			// Only validate min count since max count is checked on every request...
 			return (getMatchedRequestCount() >= getExpectedCount().getMinCount());
 		}
 	}
